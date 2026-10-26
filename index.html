@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Me-Formata · Documentos sem complicação</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <input class="tab" type="radio" name="tab" id="t0" checked aria-label="Início">
+    <input class="tab" type="radio" name="tab" id="t1" aria-label="Conversor">
+    <input class="tab" type="radio" name="tab" id="t2" aria-label="ABNT">
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+        <defs>
+            <symbol id="doc" viewBox="0 0 24 24">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
+            </symbol>
+            <symbol id="img" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <path d="M21 15l-5-5L5 21" />
+            </symbol>
+            <symbol id="shield" viewBox="0 0 24 24">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </symbol>
+            <symbol id="bolt" viewBox="0 0 24 24">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9z" />
+            </symbol>
+            <symbol id="ok" viewBox="0 0 24 24">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <path d="M22 4L12 14l-3-3" />
+            </symbol>
+            <symbol id="up" viewBox="0 0 24 24">
+                <path d="M16 16l-4-4-4 4M12 12v9" />
+                <path d="M20.4 18.4A5 5 0 0 0 18 9h-1.3A8 8 0 1 0 3 16.3" />
+            </symbol>
+            <symbol id="grid" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="7" height="7" />
+                <rect x="14" y="3" width="7" height="7" />
+                <rect x="14" y="14" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" />
+            </symbol>
+            <symbol id="down" viewBox="0 0 24 24">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+            </symbol>
+            <symbol id="arr" viewBox="0 0 24 24">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+            </symbol>
+            <symbol id="book" viewBox="0 0 24 24">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+            </symbol>
+            <symbol id="mini" viewBox="0 0 24 24">
+                <path
+                    d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
+            </symbol>
+            <symbol id="sync" viewBox="0 0 24 24">
+                <path d="M23 4v6h-6M1 20v-6h6" />
+                <path d="M3.5 9a9 9 0 0 1 14.9-3.4L23 10M1 14l4.6 4.4A9 9 0 0 0 20.5 15" />
+            </symbol>
+            <symbol id="type" viewBox="0 0 24 24">
+                <path d="M4 7V4h16v3M9 20h6M12 4v16" />
+            </symbol>
+        </defs>
+    </svg>
+    <header class="top"><a class="logo" href="#" data-tab="t0"><b>Me-Formata</b><small>Documentos sem
+                complicação</small></a>
+        <nav aria-label="Principal"><label for="t0" data-nav="t0">Início</label><label for="t2" data-nav="t2">Formatar
+                ABNT</label><label for="t1" data-nav="t1">Converter arquivos</label><a href="#" data-tab="t0"
+                data-go="como" data-nav="como">Como utilizar</a><a href="#" data-tab="t0" data-go="sobre"
+                data-nav="sobre">Sobre</a></nav>
+        <a class="enter" href="#" data-tab="t2">Entrar</a>
+    </header>
+    <main>
+        <section class="hero" id="inicio">
+            <div class="in">
+                <div><span class="badge">Sua nova ferramenta de documentos</span>
+                    <h1>Importou, formatou, entregou!</h1>
+                    <p>Transforme seus arquivos e organize seus trabalhos acadêmicos de forma simples, rápida e prática.
+                    </p>
+                    <div class="cta">
+                        <a href="#" data-tab="t2"><span class="ic"><svg class="i" aria-hidden="true">
+                                    <use href="#doc" />
+                                </svg></span><span><b>Formatar nas normas ABNT</b><small>Organize seu trabalho
+                                    acadêmico.</small></span><svg class="i" aria-hidden="true">
+                                <use href="#arr" />
+                            </svg></a>
+                        <a href="#" data-tab="t1" data-to="toPng"><span class="ic"><svg class="i" aria-hidden="true">
+                                    <use href="#img" />
+                                </svg></span><span><b>Converter PDF para PNG</b><small>Transforme páginas em
+                                    imagens.</small></span><svg class="i" aria-hidden="true">
+                                <use href="#arr" />
+                            </svg></a>
+                    </div>
+                    <div class="trust"><span><svg class="i" aria-hidden="true">
+                                <use href="#shield" />
+                            </svg>Seguro</span><span><svg class="i" aria-hidden="true">
+                                <use href="#bolt" />
+                            </svg>Rápido</span><span><svg class="i" aria-hidden="true">
+                                <use href="#ok" />
+                            </svg>Fácil de usar</span></div>
+                </div>
+                <svg class="art" viewBox="0 0 380 300" role="img"
+                    aria-label="Documento ABNT e imagem, convertendo PDF em PNG">
+                    <path d="M60 90c10-60 120-80 190-40s90 110 40 160-170 60-210 10S50 150 60 90z" fill="#1d5fd0"
+                        opacity=".55" />
+                    <g transform="rotate(-8 170 130)">
+                        <rect x="90" y="40" width="150" height="190" rx="8" fill="#f4f8ff" /><text x="165" y="85"
+                            text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="30"
+                            fill="#1b3f86">ABNT</text>
+                        <g stroke="#5b8fdc" stroke-width="6" stroke-linecap="round">
+                            <path d="M112 110h110M112 130h90M112 150h110M112 170h80" />
+                        </g>
+                    </g>
+                    <g transform="rotate(-8 255 205)">
+                        <rect x="210" y="170" width="100" height="75" rx="8" fill="#fff" />
+                        <rect x="220" y="180" width="80" height="55" rx="4" fill="#2f7be8" />
+                        <circle cx="278" cy="196" r="6" fill="#fff" />
+                        <path d="M222 233l24-24 16 14 12-10 24 20z" fill="#0e3d91" />
+                    </g>
+                    <g transform="rotate(-8 280 262)">
+                        <rect x="225" y="245" width="125" height="36" rx="8" fill="#2f80ed" /><text x="287" y="269"
+                            text-anchor="middle" font-family="system-ui,sans-serif" font-weight="700" font-size="16"
+                            fill="#fff">PDF → PNG</text>
+                    </g>
+                </svg>
+            </div>
+        </section>
+
+        <section class="sec" id="como">
+            <div class="in">
+                <h2>Como utilizar</h2>
+                <p class="lead">Em poucos passos, seu arquivo pronto do jeito que você precisa.</p>
+                <div class="steps">
+                    <div class="step"><span class="ic"><span class="n">1</span><svg class="i" aria-hidden="true">
+                                <use href="#up" />
+                            </svg></span>
+                        <h3>Envie seu arquivo</h3>
+                        <p>Faça o upload do seu documento ou imagem.</p>
+                    </div>
+                    <div class="step"><span class="ic"><span class="n">2</span><svg class="i" aria-hidden="true">
+                                <use href="#grid" />
+                            </svg></span>
+                        <h3>Escolha a ferramenta</h3>
+                        <p>Selecione o que você precisa: ABNT, conversão ou outra opção.</p>
+                    </div>
+                    <div class="step"><span class="ic"><span class="n">3</span><svg class="i" aria-hidden="true">
+                                <use href="#down" />
+                            </svg></span>
+                        <h3>Baixe o resultado</h3>
+                        <p>Pronto! Seu arquivo já está formatado ou convertido.</p>
+                    </div>
+                </div>
+                <div class="row" style="justify-content:center;margin-top:28px"><a class="enter" href="#"
+                        data-tab="t2">Formatar em ABNT</a><a class="enter alt2" href="#" data-tab="t1">Converter
+                        arquivos</a></div>
+            </div>
+        </section>
+
+        <section class="sec alt" id="mais">
+            <div class="in">
+                <h2>Mais ferramentas para você</h2>
+                <p class="lead">Tudo o que você precisa, em um só lugar.</p>
+                <div class="tools">
+                    <div class="tl soon" aria-disabled="true"><span class="ic"><svg class="i" aria-hidden="true">
+                                <use href="#doc" />
+                            </svg></span><span><b>PDF para Word</b><small>Deixe seu documento
+                                editável.</small></span><em>Em breve</em></div>
+                    <a class="tl" href="#" data-tab="t1" data-to="toPdf"><span class="ic"><svg class="i"
+                                aria-hidden="true">
+                                <use href="#img" />
+                            </svg></span><span><b>Imagens para PDF</b><small>Junte suas imagens em um só
+                                arquivo.</small></span><span class="go"><svg class="i" aria-hidden="true">
+                                <use href="#arr" />
+                            </svg></span></a>
+                    <div class="tl soon" aria-disabled="true"><span class="ic"><svg class="i" aria-hidden="true">
+                                <use href="#type" />
+                            </svg></span><span><b>Contador de palavras</b><small>Saiba quantas palavras tem seu
+                                texto.</small></span><em>Em breve</em></div>
+                    <div class="tl soon" aria-disabled="true"><span class="ic"><svg class="i" aria-hidden="true">
+                                <use href="#book" />
+                            </svg></span><span><b>Gerador de referências</b><small>Monte suas referências no padrão
+                                ABNT.</small></span><em>Em breve</em></div>
+                    <div class="tl soon" aria-disabled="true"><span class="ic"><svg class="i" aria-hidden="true">
+                                <use href="#mini" />
+                            </svg></span><span><b>Compressor de PDF</b><small>Reduza o tamanho do seu
+                                arquivo.</small></span><em>Em breve</em></div>
+                    <a class="tl" href="#" data-tab="t1"><span class="ic"><svg class="i" aria-hidden="true">
+                                <use href="#sync" />
+                            </svg></span><span><b>Outras conversões</b><small>PNG, JPG e PDF em qualquer
+                                direção.</small></span><span class="go"><svg class="i" aria-hidden="true">
+                                <use href="#arr" />
+                            </svg></span></a>
+                </div>
+            </div>
+        </section>
+        <section class="sec" id="sobre">
+            <div class="in narrow">
+                <h2>Sobre o Me-Formata</h2>
+                <p class="lead">Uma ferramenta simples para organizar trabalhos acadêmicos e converter arquivos, sem
+                    instalar nada.</p>
+                <ul class="abt">
+                    <li><b>Formatar ABNT</b>Cole ou importe um texto (.txt, .docx ou .pdf), ajuste o tipo de trabalho e
+                        baixe em DOCX editável ou PDF. Margens, fonte, espaçamento, recuo, títulos, citações longas e
+                        referências são tratados.</li>
+                    <li><b>Converter arquivos</b>PDF, PNG e JPG em qualquer direção, com envio por WhatsApp, e-mail,
+                        Outlook, Instagram e outros apps pelo menu do seu aparelho.</li>
+                    <li><b>Privacidade</b>Tudo é processado no seu navegador. Seus arquivos não são enviados a
+                        servidores.</li>
+                    <li><b>Limites</b>Sumário, notas de rodapé, tabelas e figuras ainda não são gerados, e exigências
+                        específicas da sua instituição precisam ser conferidas por você.</li>
+                </ul>
+            </div>
+        </section>
+    </main>
+    <div class="wrap">
+        <div class="ph" id="ph1">
+            <h2 class="ft-t">Converter arquivos</h2>
+            <p class="sub">PDF, PNG e JPG em qualquer direção. Nada é enviado a servidores.</p>
+        </div>
+        <div class="ph" id="ph2">
+            <h2 class="ft-t">Formatar nas normas ABNT</h2>
+            <p class="sub">Cole ou importe o texto e baixe em DOCX ou PDF.</p>
+        </div>
+        <!-- PÁGINA 1: CONVERSOR -->
+        <section class="page" id="p1">
+            <div class="card">
+                <label class="drop" for="f1">① Toque para escolher arquivos<small>PDF, PNG ou JPG · pode escolher
+                        vários</small>
+                    <input id="f1" type="file" accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+                        multiple></label>
+                <p class="hint" id="sel" aria-live="polite" style="margin:10px 0 0">Nenhum arquivo selecionado.</p>
+                <label class="l">② Converter para</label>
+                <div class="pills">
+                    <input type="radio" name="to" id="toPng" value="png" checked><label for="toPng">PNG</label>
+                    <input type="radio" name="to" id="toJpg" value="jpg"><label for="toJpg">JPG</label>
+                    <input type="radio" name="to" id="toPdf" value="pdf"><label for="toPdf">PDF</label>
+                </div>
+                <div class="row"><button class="pri" id="go" disabled>③ Converter</button></div>
+                <p class="hint">PDF → PNG/JPG gera uma imagem por página. Várias imagens → PDF juntam tudo em um único
+                    PDF.</p>
+            </div>
+            <div class="card" id="res" hidden>
+                <strong>Prontos para enviar</strong>
+                <div id="list"></div>
+                <div class="row"><button class="pri" id="shAll">📤 Compartilhar (WhatsApp, e-mail, Instagram…)</button>
+                </div>
+                <p class="hint">O botão abre o menu do seu aparelho com WhatsApp, Gmail, Outlook, Instagram e outros
+                    apps. Se o seu navegador não tiver esse menu, o arquivo é baixado para você anexar.</p>
+            </div>
+        </section>
+
+        <!-- PÁGINA 2: ABNT -->
+        <section class="page" id="p2">
+            <div class="card">
+                <strong>1. Enviar ou colar o texto</strong>
+                <label class="drop" for="f2" style="margin-top:10px">Importar arquivo<small>.txt, .docx ou
+                        .pdf</small><input id="f2" type="file"
+                        accept=".txt,.docx,.pdf,text/plain,application/pdf"></label>
+                <label class="l" for="txt">…ou cole seu texto aqui (original)</label>
+                <textarea id="txt" placeholder="Cole o texto como está, mesmo desorganizado."></textarea>
+                <div class="row"><button id="clr">🗑️ Limpar</button></div>
+            </div>
+            <div class="card">
+                <strong>2. Tipo de documento e configurações</strong>
+                <div class="g2">
+                    <div><label class="l" for="tipo">Tipo de trabalho</label><select id="tipo">
+                            <option value="escolar">Trabalho escolar</option>
+                            <option value="artigo">Artigo científico</option>
+                            <option value="relatorio">Relatório</option>
+                            <option value="tcc">TCC</option>
+                            <option value="outro">Outro</option>
+                        </select></div>
+                    <div><label class="l" for="fnt">Fonte</label><select id="fnt">
+                            <option value="times">Times New Roman</option>
+                            <option value="helvetica">Arial</option>
+                        </select></div>
+                    <div><label class="l" for="tam">Tamanho</label><select id="tam">
+                            <option>10</option>
+                            <option>11</option>
+                            <option selected>12</option>
+                        </select></div>
+                </div>
+                <label class="ck"><input type="checkbox" id="capa"> Incluir capa</label>
+                <label class="ck"><input type="checkbox" id="rosto"> Incluir folha de rosto</label>
+                <details>
+                    <summary>Dados do trabalho (nada é inventado: o que ficar vazio aparece como pendência)</summary>
+                    <div class="g2">
+                        <div><label class="l" for="inst">Instituição</label><input class="t" id="inst"></div>
+                        <div><label class="l" for="aut">Autor</label><input class="t" id="aut"></div>
+                        <div><label class="l" for="tit">Título</label><input class="t" id="tit"></div>
+                        <div><label class="l" for="cid">Cidade</label><input class="t" id="cid"></div>
+                        <div><label class="l" for="ano">Ano</label><input class="t" id="ano" inputmode="numeric"></div>
+                    </div>
+                </details>
+                <div class="row"><button class="pri" id="fmtBtn">3. Formatar</button></div>
+                <p class="hint">Só a formatação é alterada. As palavras do seu texto são mantidas.</p>
+            </div>
+            <div class="card">
+                <strong>4. Revisar e 5. Exportar</strong>
+                <div><progress id="prog" max="100" value="0" hidden style="width:100%"></progress><span id="pm"
+                        class="hint"></span></div>
+                <div class="paper-box" style="margin-top:8px">
+                    <div class="paper" id="paper"></div>
+                </div>
+                <div class="row">
+                    <button class="pri" id="dx">⬇️ DOCX</button><button class="pri" id="dl">⬇️ PDF</button>
+                    <button id="cp">📋 Copiar</button><button id="pr">🖨️ Imprimir</button>
+                    <button id="shr">📤 Compartilhar PDF</button><button id="mail">✉️ E-mail</button><button id="wa">💬
+                        WhatsApp</button>
+                </div>
+                <details open>
+                    <summary>✅ Verificação das normas</summary>
+                    <ul id="chk"></ul>
+                </details>
+                <details>
+                    <summary>🛠️ Alterações realizadas</summary>
+                    <ul id="chg"></ul>
+                </details>
+                <details>
+                    <summary>✏️ Editar o texto formatado</summary>
+                    <textarea id="out"
+                        placeholder="O texto formatado aparece aqui depois de clicar em Formatar."></textarea>
+                    <p class="hint"># título de seção · ## subseção · &gt; citação longa (mais de 3 linhas). A prévia e
+                        os arquivos usam este texto.</p>
+                </details>
+            </div>
+        </section>
+    </div>
+    <footer class="ft">
+        <div class="in fi"><a class="logo" href="#" data-tab="t0"><b>Me-Formata</b><small>Documentos sem complicação</small></a>
+            <div class="fx"><strong>Seu tempo é valioso.</strong><br>Deixe a formatação e as conversões com a gente. O Me-Formata funciona no seu navegador: seus arquivos não são enviados a servidores.
+            
+            <hr>
+                <p>© Jefferson Oliveira Araujo</p>
+        </div>
+            
+            <a class="enter" href="#" data-tab="t2">Comece agora</a>
+        </div>
+    </footer>
+    <div id="toast" role="status" aria-live="polite"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/docx@7.8.2/build/index.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
