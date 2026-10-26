@@ -286,6 +286,7 @@
                             <option selected>12</option>
                         </select></div>
                 </div>
+                <label class="ck"><input type="checkbox" id="num" checked> Numerar seções (1, 1.1, 1.1.1)</label>
                 <label class="ck"><input type="checkbox" id="capa"> Incluir capa</label>
                 <label class="ck"><input type="checkbox" id="rosto"> Incluir folha de rosto</label>
                 <details>
@@ -314,8 +315,15 @@
                     <button id="shr">📤 Compartilhar PDF</button><button id="mail">✉️ E-mail</button><button id="wa">💬
                         WhatsApp</button>
                 </div>
+                <div id="notes" class="notes" hidden><strong>Anotações informais encontradas</strong>
+                    <p class="hint">Parecem notas de teste ou comentários, não texto do trabalho. Nada foi removido:
+                        escolha o que fazer.</p>
+                    <ul id="nl"></ul>
+                    <div class="row"><button id="nrAll">Remover todas</button><button id="nkAll">Manter todas</button>
+                    </div>
+                </div>
                 <details open>
-                    <summary>✅ Verificação das normas</summary>
+                    <summary id="chkS">Verificação das normas</summary>
                     <ul id="chk"></ul>
                 </details>
                 <details>
@@ -326,29 +334,26 @@
                     <summary>✏️ Editar o texto formatado</summary>
                     <textarea id="out"
                         placeholder="O texto formatado aparece aqui depois de clicar em Formatar."></textarea>
-                    <p class="hint"># título de seção · ## subseção · &gt; citação longa (mais de 3 linhas). A prévia e
-                        os arquivos usam este texto.</p>
+                    <p class="hint"># título de seção · ## subseção · ### 3º nível · - ou 1. para listas · &gt; citação
+                        longa (mais de 3 linhas). A prévia e os arquivos usam este texto.</p>
                 </details>
             </div>
         </section>
     </div>
     <footer class="ft">
-        <div class="in fi"><a class="logo" href="#" data-tab="t0"><b>Me-Formata</b><small>Documentos sem complicação</small></a>
-            <div class="fx"><strong>Seu tempo é valioso.</strong><br>Deixe a formatação e as conversões com a gente. O Me-Formata funciona no seu navegador: seus arquivos não são enviados a servidores.
-            
-            <hr>
-                <p>© Jefferson Oliveira Araujo</p>
-        </div>
-            
+        <div class="in fi"><a class="logo" href="#" data-tab="t0"><b>Me-Formata</b><small>Documentos sem
+                    complicação</small></a>
+            <div class="fx"><strong>Seu tempo é valioso.</strong><br>Deixe a formatação e as conversões com a gente. O
+                Me-Formata funciona no seu navegador: seus arquivos não são enviados a servidores.</div>
             <a class="enter" href="#" data-tab="t2">Comece agora</a>
         </div>
     </footer>
     <div id="toast" role="status" aria-live="polite"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/docx@7.8.2/build/index.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/docx@9.6.1/dist/index.iife.js"></script>
     <script src="app.js"></script>
 </body>
 

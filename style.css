@@ -355,15 +355,21 @@ textarea {
 }
 
 .paper h2,
-.paper h3 {
+.paper h3,
+.paper h4 {
     margin: 1.5em 0 1.5em;
     font-size: 1em;
     text-indent: 0;
     text-align: left
 }
 
-.paper h2 {
-    text-transform: uppercase
+.paper h2.c {
+    text-align: center
+}
+
+.paper h4 {
+    font-weight: 400;
+    font-style: italic
 }
 
 .paper blockquote {
@@ -1201,10 +1207,6 @@ svg.i {
     display: none
 }
 
-.ph:hover{
-    scale: 105%;
-}
-
 #t1:checked~.wrap #ph1,
 #t2:checked~.wrap #ph2 {
     display: block
@@ -1266,4 +1268,55 @@ svg.i {
     display: block;
     color: var(--hd);
     margin-bottom: 2px
+}
+
+.x::before {
+    content: "❌ "
+}
+
+.p::before {
+    content: "⏳ "
+}
+
+.paper .li {
+    display: flex;
+    padding-left: 1.25cm;
+    text-indent: 0
+}
+
+.paper .li span:first-child {
+    flex: 0 0 .75cm
+}
+
+.paper .nt {
+    background: #fff3b0;
+    outline: 1px dashed #b58900
+}
+
+.notes {
+    background: var(--ac2);
+    border: 1px solid var(--bd);
+    border-radius: 12px;
+    padding: 12px;
+    margin: 12px 0
+}
+
+.notes ul {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0
+}
+
+.notes li {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    padding: 8px 0;
+    border-top: 1px solid var(--bd)
+}
+
+.notes li span {
+    flex: 1 1 100%;
+    font-size: .9rem
 }
