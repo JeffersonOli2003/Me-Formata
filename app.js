@@ -75,16 +75,8 @@ const cfg = () => ({
 const GEO = { W: 595.28, H: 841.89, L: 85.04, R: 56.69, T: 85.04, B: 56.69, IND: 35.43, QI: 113.39, LM: 21.26 };
 const strip = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-/* anotações informais (nunca removidas sem perguntar) */
+/* linhas de teste/rascunho: só usadas para não gerar alertas sobre elas */
 const NOTE_START = /^\s*[\(\[]?\s*(teste|testando|test|todo|to do|fixme|obs|observa[cç][aã]o|nota|lembrete|rascunho|draft|coment[aá]rio|anota[cç][aã]o|apagar|deletar|ver depois|revisar|corrigir|completar|xxx+)\s*[\)\]]?\s*(?::|[-–—]\s|$)|^\s*(teste|testando)\b/i;
-const NOTE_ANY = /\b(texto de teste|apenas um teste|isto é um teste|lorem ipsum|bl[aá] bl[aá]|(?:escrever|colocar|inserir|colar|completar|adicionar) (?:aqui|depois|mais))\b|^\s*\/\/|\b(?:k{3,}|rsrs+)\b/i;
-const NOTE_BRK = /^\s*\[[^\]]{3,}\]\s*$/;
-const NOTE_HEAD = /^(anota[cç][õo]es?|rascunhos?|observa[cç][õo]es?|notas?|testes?|todo|lembretes?|coment[aá]rios?)(\s.*)?$/i;
-const isNote = b => b.t === 'r' ? false : b.t === 'h' ? NOTE_HEAD.test(b.s) : (NOTE_START.test(b.s) || NOTE_ANY.test(b.s) || NOTE_BRK.test(b.s));
-const nkey = b => b.t + '|' + b.s;
-const ign = new Set();
-
-/* títulos, listas, citações */
 const KNOWN = /^(\d+(\.\d+)*\.?\s+)?(introdu[cç][ãa]o|desenvolvimento|conclus[ãa]o|conclus[õo]es|considera[cç][õo]es finais|refer[êe]ncias( bibliogr[áa]ficas)?|resumo|abstract|metodologia|revis[ãa]o (de|da) literatura|fundamenta[cç][ãa]o te[óo]rica|resultados( e discuss[ãa]o)?|discuss[ãa]o|objetivos?|justificativa|agradecimentos|ap[êe]ndices?|anexos?|material e m[ée]todos)$/i;
 const UNNUM = /^(resumo|abstract|resumen|refer[êe]ncias|agradecimentos|ap[êe]ndices?|anexos?|gloss[áa]rio|sum[áa]rio|ep[íi]grafe|dedicat[óo]ria)/i;
 const LIST = /^(?:([-•*–—])|(\d{1,2}[.)])|([a-z]\)))\s+(\S.*)$/;
@@ -195,6 +187,9 @@ function citeCheck(bl) {
 }
 
 /* ---------- ANÁLISE (NBR 14724 · 6024 · 6023 · 10520) ---------- */
+/* linhas que não precisam terminar com ponto: ano, local/UF, metadados, títulos curtos, listas de palavras-chave */
+const META = /^(?:(?:1[5-9]|20)\d\d|[\p{L}.' ]+\s*[-–—/,]\s*[A-Z]{2}|(?:palavras-chave|keywords|orientador(?:a)?|coorientador(?:a)?|disciplina|professor(?:a)?|curso|turma|data|cidade|local|autor(?:es)?|aluno(?:a)?s?)\s*:.*)$/iu;
+const needsPunct = b => b.t === 'p' && b.s.split(/\s+/).length >= 9 && !META.test(b.s.trim()) && !NOTE_START.test(b.s) && !URLONLY.test(b.s) && !/[.!?:;"”)…]$/.test(b.s);
 const URLONLY = /^(?:https?:\/\/|www\.)\S+$/i;
 let ANA = null;
 function ctx(bl, i) { if (bl[i].t === 'h') return 'linha ' + bl[i].ln; let h = null; for (let k = i - 1; k >= 0; k--)if (bl[k].t === 'h') { h = bl[k]; break } return 'linha ' + bl[i].ln + (h ? ` (seção «${h.s.slice(0, 35)}»)` : '') }
@@ -239,7 +234,7 @@ function analyzeDoc(raw, c) {
     dots.length && A('Numeração', 'auto', `${dots.length} título(s) com ponto depois do número (ex.: «${dots[0].b.no}.»)`, { ln: dots[0].b.ln, lns: dots.map(x => x.b.ln), where: 'linha ' + dots[0].b.ln, norma: 'NBR 6024', why: 'O indicativo numérico é seguido de espaço, sem ponto, hífen ou travessão.', fix: 'Remover o ponto depois do número.' });
     hs.forEach(({ b, i }, k) => {
         if (b.lv >= 3 || (b.lv === 1 && UNNUM.test(b.s))) return; let ch = 0; for (let j = k + 1; j < hs.length && hs[j].b.lv > b.lv; j++)if (hs[j].b.lv === b.lv + 1) ch++;
-        ch === 1 && A('Numeração', 'confirm', `Seção com uma única subseção: «${b.s.slice(0, 40)}»`, { ln: b.ln, where: ctx(bl, i), norma: 'NBR 6024 (boa prática)', why: 'Em geral, uma seção só é dividida quando há pelo menos duas subseções.', fix: 'Junte a subseção ao texto da seção ou crie outra subseção. Não alterei o conteúdo.' })
+        ch === 1 && A('Numeração', 'sug', `Seção com uma única subseção: «${b.s.slice(0, 40)}»`, { ln: b.ln, where: ctx(bl, i), norma: 'NBR 6024 (boa prática)', why: 'Em geral, uma seção só é dividida quando há pelo menos duas subseções.', fix: 'Junte a subseção ao texto da seção ou crie outra subseção. Não alterei o conteúdo.' })
     });
     /* hierarquia */
     lvlog.forEach(x => A('Hierarquia', 'auto', `Salto de nível no título «${x.s.slice(0, 40)}» (de nível ${x.from} para ${x.to})`, { ln: x.ln, where: 'linha ' + x.ln, norma: 'NBR 6024', why: 'Uma subseção só pode aparecer dentro de uma seção do nível imediatamente superior.', fix: `Título ajustado para o nível ${x.to}.` }));
@@ -249,7 +244,7 @@ function analyzeDoc(raw, c) {
     lines.forEach((raw0, i) => {
         const l = raw0.trim(); if (!l || i + 1 >= refLn || hset.has(i + 1) || (i > 0 && lines[i - 1].trim())) return;
         let k = i + 1; while (k < lines.length && !lines[k].trim()) k++; const nx = lines[k] || '', nxH = hset.has(k + 1), w = l.split(/\s+/).length;
-        if (l.length >= 8 && l.length <= 70 && w >= 2 && w <= 9 && /^\p{Lu}/u.test(l) && !/[.!?;,:]$/.test(l) && !LIST.test(l) && !/^[>#\[(]/.test(l) && (nx.trim().length > 60 || nxH) && !NOTE_START.test(l))
+        if (l.length >= 8 && l.length <= 70 && w >= 2 && w <= 9 && /^\p{Lu}/u.test(l) && !/[.!?;,:]$/.test(l) && !LIST.test(l) && !/^[>#\[(]/.test(l) && (nx.trim().length > 60 || nxH) && !NOTE_START.test(l) && !META.test(l))
             tc('confirm', `Possível título não identificado: «${l}»`, { ln: i + 1, where: 'linha ' + (i + 1), norma: 'NBR 6024 / NBR 14724', why: 'A linha parece um título (curta, sem ponto final, antes de um parágrafo), mas não tem número nem marcação. Não é possível ter certeza.', fix: 'Se for um título, comece a linha com # (seção) ou ## (subseção).' })
     });
     /* parágrafos e formatação */
@@ -264,7 +259,7 @@ function analyzeDoc(raw, c) {
     const mrs = new Set(bl.filter(b => b.t === 'li' && b.mr).map(b => b.mr));
     mrs.size > 1 && A('Parágrafos', 'auto', `Marcadores de lista diferentes no mesmo documento (${[...mrs].join(' ')})`, { ln: bl.find(b => b.t === 'li' && b.mr).ln, lns: bl.filter(b => b.t === 'li' && b.mr).map(b => b.ln), norma: 'Padrão acadêmico', why: 'Listas equivalentes devem ter a mesma aparência.', fix: 'Marcadores uniformizados, um item por linha.' });
     const np = lim('Parágrafos');
-    bl.forEach((b, i) => { if (b.t === 'p' && !/[.!?:;"”)…]$/.test(b.s) && !NOTE_START.test(b.s) && !URLONLY.test(b.s)) np('confirm', `Parágrafo sem pontuação final: «${b.s.slice(0, 45)}…»`, { ln: b.ln, where: ctx(bl, i), norma: 'NBR 14724', why: 'Pode ser uma frase incompleta ou um título digitado como parágrafo.', fix: 'Revise o trecho. Não alterei o texto.' }) });
+    bl.forEach((b, i) => { if (needsPunct(b)) np('sug', `Parágrafo longo sem pontuação final: «${b.s.slice(0, 45)}…»`, { ln: b.ln, where: ctx(bl, i), norma: 'NBR 14724 (sugestão de revisão)', why: 'Pode ser uma frase incompleta. Não é uma infração confirmada: títulos, anos, locais e metadados não são avaliados aqui.', fix: 'Revise o trecho. Não alterei o texto.' }) });
     A('Formatação da página', 'unverif', 'Margens, fonte, tamanho e espaçamento do arquivo original não puderam ser verificados', { norma: 'NBR 14724', why: 'O texto colado ou importado não traz informações de formatação (só as palavras).', fix: 'O documento final recebe A4, margens 3/3/2/2 cm, fonte 12, espaçamento 1,5, recuo de 1,25 cm e justificado.' });
     /* NBR 10520: citações */
     const refs = bl.map((b, i) => ({ b, i })).filter(x => x.b.t === 'r' && !URLONLY.test(x.b.s)).map(x => ({ ...x, sn: strip(x.b.s).toUpperCase().split(/[,.]/)[0].trim(), yr: (x.b.s.match(/\b(?:1[5-9]\d\d|20\d\d)\b/) || [''])[0] }));
@@ -325,7 +320,6 @@ function analyzeDoc(raw, c) {
     else A('Estrutura', 'unverif', 'Estrutura exigida para «Outro» depende da orientação do professor', { norma: 'NBR 14724', why: 'Não há estrutura-padrão para este tipo.', fix: 'Escolha um tipo específico para verificar a estrutura.' });
     const f2 = o => Object.entries(o).filter(([, v]) => !v).map(([k]) => k);
     if (c.capa || c.rosto) { const m = f2({ 'instituição': c.inst, autor: c.aut, 'título': c.tit, cidade: c.cid, ano: c.ano }); m.length && A('Pré-textuais', 'confirm', 'Dados da capa/folha de rosto incompletos: faltam ' + m.join(', '), { norma: 'NBR 14724', why: 'Esses dados só podem ser informados por você.', fix: 'Preencha em «Dados do trabalho». O que ficar vazio não é inventado.' }) }
-    const nt = bl.filter(isNote); nt.length && A('Anotações', 'confirm', `${nt.length} possível(is) anotação(ões) informal(is) no texto`, { ln: nt[0].ln, lns: nt.map(b => b.ln), where: 'linha ' + nt[0].ln, norma: 'NBR 14724 (texto formal)', why: 'Notas de teste e comentários não fazem parte do trabalho.', fix: 'Depois de aplicar, o quadro amarelo pergunta se deseja remover cada uma. Nada é apagado sozinho.' });
     hs.length && !nProb && !lvlog.length && A('Numeração e hierarquia', 'ok', 'Numeração e hierarquia dos títulos coerentes', {});
     return { F, raw, applied: false }
 }
@@ -344,28 +338,9 @@ function render() {
         if (b.t === 'h') { e = document.createElement(['', 'h2', 'h3', 'h4'][b.lv]); e.textContent = b.txt; if (b.un) e.className = 'c' }
         else if (b.t === 'li') { e = document.createElement('div'); e.className = 'li'; const m = document.createElement('span'); m.textContent = b.mk; const x = document.createElement('span'); x.textContent = b.s; e.append(m, x) }
         else { e = document.createElement(b.t === 'q' ? 'blockquote' : 'p'); if (b.t === 'r') e.className = 'r'; e.textContent = b.s }
-        if (isNote(b) && !ign.has(nkey(b))) e.classList.add('nt'); P.append(e)
+        P.append(e)
     });
     const k = Math.min(1, Math.max(.3, (document.querySelector('.paper-box').clientWidth - 24) / 794)); P.style.zoom = k
-}
-
-/* ---------- anotações: perguntar antes de remover ---------- */
-function notesUI() {
-    const bl = parse(E('out').value), N = bl.filter(b => isNote(b) && !ign.has(nkey(b))), box = E('notes'), L = E('nl'); L.textContent = ''; box.hidden = !N.length;
-    N.forEach(b => {
-        const li = document.createElement('li'), sp = document.createElement('span');
-        const kind = b.t === 'h' ? 'Seção' : b.t === 'li' ? 'Item de lista' : b.t === 'q' ? 'Citação' : 'Parágrafo';
-        sp.textContent = kind + ': «' + b.s.slice(0, 90) + (b.s.length > 90 ? '…' : '') + '»';
-        const r = document.createElement('button'), k = document.createElement('button'); r.textContent = 'Remover'; k.textContent = 'Manter';
-        r.onclick = () => { LOG.push(['k', 'Removido por você: «' + b.s.slice(0, 60) + '»' + (b.t === 'h' ? ' (seção inteira)' : '')]); dropNote(nkey(b)) }; k.onclick = () => { LOG.push(['i', 'Mantido por você: «' + b.s.slice(0, 60) + '»']); ign.add(nkey(b)); refresh() };
-        li.append(sp, r, k); L.append(li)
-    });
-    E('nrAll').onclick = () => { N.forEach(b => { LOG.push(['k', 'Removido por você: «' + b.s.slice(0, 60) + '»']); dropNote(nkey(b), true) }); refresh() }; E('nkAll').onclick = () => { N.forEach(b => { LOG.push(['i', 'Mantido por você: «' + b.s.slice(0, 60) + '»']); ign.add(nkey(b)) }); refresh() }
-}
-function dropNote(key, quiet) {
-    const bl = parse(E('out').value), i = bl.findIndex(b => nkey(b) === key); if (i < 0) return; let j = i + 1;
-    if (bl[i].t === 'h') while (j < bl.length && !(bl[j].t === 'h' && bl[j].lv <= bl[i].lv)) j++;
-    bl.splice(i, j - i); E('out').value = ser(bl); if (!quiet) refresh()
 }
 
 /* ---------- layout A4 (usado no PDF e na verificação) ---------- */
@@ -415,7 +390,7 @@ function layout(bl, c, cov, mw, san) {
             }
             for (let k = 0; k < take; k++) {
                 const ln = b.lines[i + k], fl = i + k === 0, x0 = b.x0 + (fl ? b.ind : 0), av = b.maxW - (fl ? b.ind : 0),
-                nat = ln.w.reduce((a, x) => a + mw(b.f, b.size, x), 0) + (ln.w.length - 1) * sp(b.f, b.size);
+                    nat = ln.w.reduce((a, x) => a + mw(b.f, b.size, x), 0) + (ln.w.length - 1) * sp(b.f, b.size);
                 let extra = 0, wd = nat; if (b.just && !ln.last && !ln.noj && ln.w.length > 1 && nat < av) { extra = (av - nat) / (ln.w.length - 1); wd = av }
                 items.push({
                     role: 'body', blk: bi, bt: b.kind, li: i + k, n, pg: pgn, x: b.align === 'c' ? L + (w - wd) / 2 : x0, w: wd, yTop: y + sb + k * b.lh, lh: b.lh, size: b.size, f: b.f, words: ln.w, extra,
@@ -475,7 +450,7 @@ async function measure() {
     try { const k = sig(), r = await buildPdf(); REP = r.rep; LAST = { key: k, blob: r.blob } } catch (e) { REP = { err: e.message === 'pdflib' ? 'biblioteca de PDF não carregou (verifique a internet)' : e.message } }
     verify()
 }
-let tm = 0; function refresh() { REP = null; render(); notesUI(); verify(); renderChg(); clearTimeout(tm); tm = setTimeout(measure, 450) }
+let tm = 0; function refresh() { REP = null; render(); verify(); renderChg(); clearTimeout(tm); tm = setTimeout(measure, 450) }
 
 /* ---------- verificação: corretos, incorretos, pendentes ---------- */
 function verify() {
@@ -486,8 +461,6 @@ function verify() {
     LASTFIX > 0 && A('k', `${LASTFIX} salto(s) de nível de título corrigido(s) (ex.: de 1 direto para 3).`);
     hs.length && (c.num ? A('k', 'Numeração progressiva das seções (1, 1.1, 1.1.1). Resumo, Referências e similares ficam sem número e centralizados.') : A('p', 'Numeração progressiva desligada nas configurações.'));
     const li = bl.filter(b => b.t === 'li').length; li && A('k', `${li} item(ns) de lista mantido(s), cada um em sua própria linha.`);
-    const nn = bl.filter(b => isNote(b) && !ign.has(nkey(b))).length;
-    nn ? A('p', `${nn} possível(is) anotação(ões) informal(is) aguardam sua decisão (veja o quadro amarelo). Nada foi removido.`) : A('k', 'Nenhuma anotação informal pendente de decisão.');
     /INTRODU/i.test(h1) || A('p', 'Seção “Introdução” não encontrada.');
     /CONCLU|CONSIDERA[ÇC]/i.test(h1) || A('p', 'Seção “Conclusão” ou “Considerações finais” não encontrada.');
     const sec = hs.filter(b => b.lv === 1 && !UNNUM.test(b.s) && !/introdu|conclus|considera/i.test(b.s)).length; sec || A('p', 'Desenvolvimento: nenhuma seção entre a introdução e a conclusão foi identificada.');
@@ -500,7 +473,7 @@ function verify() {
     cc.nref && !cc.ref.length && !cc.miss.length && cc.alpha && A('k', `${cc.nref} referência(s) com autor, ano e título identificados, em ordem alfabética.`);
     cc.ok && !cc.qn && A('k', `${cc.ok} citação(ões) com autor e ano.`);
     A('p', 'Citações diretas com mais de 3 linhas devem começar com “>” (recuo de 4 cm, fonte menor).');
-    const ps = bl.filter(b => b.t === 'p' && !/[.!?:;"”)…]$/.test(b.s)).length; ps && A('p', `${ps} parágrafo(s) não terminam com pontuação (possível frase incompleta). Revise, nada foi alterado.`);
+    const ps = bl.filter(needsPunct).length; ps && A('p', `${ps} parágrafo(s) longos não terminam com pontuação (sugestão de revisão; nada foi alterado).`);
     const f = o => Object.entries(o).filter(([, v]) => !v).map(([k]) => k);
     if (c.capa) { const m = f({ 'instituição': c.inst, autor: c.aut, 'título': c.tit, cidade: c.cid, ano: c.ano }); m.length ? A('p', 'Capa: faltam ' + m.join(', ') + '.') : A('k', 'Capa com todos os dados informados.') }
     if (c.rosto) { const m = f({ autor: c.aut, 'título': c.tit, cidade: c.cid, ano: c.ano }); m.length ? A('p', 'Folha de rosto: faltam ' + m.join(', ') + '.') : A('p', 'Folha de rosto gerada. A natureza do trabalho e o orientador precisam ser acrescentados por você, se exigidos.') }
@@ -541,8 +514,7 @@ function chg(o, bl) {
 }
 function renderChg() {
     const L = E('chg'); L.textContent = ''; if (!CHG.length) return;
-    const nt = parse(E('out').value).filter(b => isNote(b) && !ign.has(nkey(b))).length, all = [...CHG];
-    nt && all.push(['p', nt + ' possível(is) anotação(ões) informal(is) aguardando sua decisão. Nada foi removido sem você confirmar.']);
+    const all = [...CHG];
     LOG.forEach(x => all.push(x)); all.push(['i', 'Nenhuma palavra do conteúdo foi alterada. Maiúsculas nos títulos de seção e a numeração são só formatação.']);
     all.forEach(([k, s]) => { const li = document.createElement('li'); li.className = k; li.textContent = s; L.append(li) })
 }
@@ -552,8 +524,8 @@ function setStage(n) { document.querySelectorAll('#stp li').forEach((li, i) => {
 function resetAna() { ANA = null; E('fmtBtn').disabled = true; E('repBox').hidden = true; setStage(1) }
 function repUI() {
     if (!ANA) return; const final = ANA.applied, B = E('rep'), n = s => ANA.F.filter(f => f.st === s).length; B.textContent = ''; E('repBox').hidden = false;
-    E('repS').textContent = `Relatório de conformidade · ${n('auto')} ${final ? 'corrigidos' : 'a corrigir automaticamente'} · ${n('confirm')} a confirmar · ${n('unverif')} não verificáveis`;
-    [['auto', final ? 'Corrigidos automaticamente' : 'Serão corrigidos automaticamente'], ['confirm', 'Necessitam de confirmação'], ['unverif', 'Não foi possível verificar'], ['ok', 'Verificados, sem problema']].forEach(([s, title]) => {
+    E('repS').textContent = `Relatório de conformidade · ${n('auto')} ${final ? 'corrigidos' : 'a corrigir automaticamente'} · ${n('confirm')} a revisar · ${n('sug')} sugestões · ${n('unverif')} não verificáveis`;
+    [['auto', final ? 'Corrigidos automaticamente' : 'Serão corrigidos automaticamente'], ['confirm', 'Possíveis inconsistências (revisar)'], ['sug', 'Sugestões de melhoria (não são infrações)'], ['unverif', 'Não foi possível verificar'], ['ok', 'Verificados, sem problema']].forEach(([s, title]) => {
         const L = ANA.F.filter(f => f.st === s); if (!L.length) return; const h = document.createElement('h4'); h.className = 'g-' + s; h.textContent = `${title} (${L.length})`; B.append(h);
         L.forEach(f => {
             const d = document.createElement('div'); d.className = 'fd f-' + s; const t = document.createElement('strong'); t.textContent = f.t; d.append(t);
@@ -586,7 +558,7 @@ E('fmtBtn').onclick = async () => {
         setStage(4); await st(20, 'Aplicando as correções seguras…'); const bl = parse(o); LASTFIX = LVFIX;
         const acts = [...document.querySelectorAll('#rep input[data-act]:checked')].map(x => x.dataset.act); CHG = []; LOG = [];
         acts.forEach(a => { if (a === 'sortRefs' && sortRefs(bl)) { LOG.push(['k', 'Referências reordenadas em ordem alfabética (confirmado por você).']); ANA.F.forEach(f => { if (f.act === a) { f.st = 'auto'; f.why += ' (aplicado com sua confirmação)'; f.act = null } }) } });
-        E('out').value = ser(bl); await st(60, 'Montando as páginas A4…'); ANA.applied = true; chg(o, bl); render(); notesUI(); repUI(); REP = null; await measure();
+        E('out').value = ser(bl); await st(60, 'Montando as páginas A4…'); ANA.applied = true; chg(o, bl); render(); repUI(); REP = null; await measure();
         await st(100, 'Pronto!'); setStage(5); setTimeout(() => { E('prog').hidden = true; E('pm').textContent = '' }, 700); E('vwC').checked = true; render(); E('paper').scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
     catch (e) { E('prog').hidden = true; toast('Erro ao formatar o texto.'); console.error(e) }
@@ -595,7 +567,7 @@ E('txt').addEventListener('input', () => { if (ANA) resetAna() });
 ['vwC', 'vwO'].forEach(i => E(i).addEventListener('change', render));
 ['tipo', 'capa', 'rosto', 'num', 'inst', 'aut', 'tit', 'cid', 'ano'].forEach(i => E(i).addEventListener('change', () => { if (ANA && !ANA.applied) { const o = ANA.raw; ANA = analyzeDoc(o, cfg()); repUI(); origUI() } }));
 
-E('clr').onclick = () => { E('txt').value = ''; E('out').value = ''; E('f2').value = ''; E('orig').textContent = ''; ign.clear(); LAST = null; resetAna(); refresh(); toast('Conteúdo limpo.') };
+E('clr').onclick = () => { E('txt').value = ''; E('out').value = ''; E('f2').value = ''; E('orig').textContent = ''; LAST = null; resetAna(); refresh(); toast('Conteúdo limpo.') };
 const PRE = { escolar: [0, 0], artigo: [0, 0], relatorio: [1, 0], tcc: [1, 1] };
 E('tipo').onchange = () => { const p = PRE[E('tipo').value]; if (p) { E('capa').checked = !!p[0]; E('rosto').checked = !!p[1] } refresh() };
 ['fnt', 'tam', 'num', 'capa', 'rosto', 'inst', 'aut', 'tit', 'cid', 'ano'].forEach(i => E(i).addEventListener('input', refresh));
@@ -618,15 +590,16 @@ E('f2').onchange = async e => {
     if (f.size > 25 * 1048576) return toast('Arquivo muito grande (máximo 25 MB).');
     try {
         let t; await st(30, 'Lendo o arquivo…');
-        if (/\.docx$/i.test(f.name)) t = (await mammoth.extractRawText({ arrayBuffer: await f.arrayBuffer() })).value;
-        else if (/\.pdf$/i.test(f.name) || f.type === 'application/pdf') t = await pdfText(f);
+        if (/\.docx$/i.test(f.name)) { if (!window.mammoth) throw new Error('lib:DOCX'); t = (await mammoth.extractRawText({ arrayBuffer: await f.arrayBuffer() })).value }
+        else if (/\.pdf$/i.test(f.name) || f.type === 'application/pdf') { if (!window.pdfjsLib) throw new Error('lib:PDF'); t = await pdfText(f) }
         else if (/\.txt$/i.test(f.name) || f.type === 'text/plain') t = await f.text();
         else { E('prog').hidden = true; return toast('Formato não aceito. Use .txt, .docx ou .pdf.') }
         E('prog').hidden = true; E('pm').textContent = '';
         if (!t.trim()) return toast('Nenhum texto encontrado. Se o PDF for escaneado (imagem), é preciso OCR, que não está disponível aqui.');
         E('txt').value = t; resetAna(); toast('Arquivo importado. Agora clique em Analisar documento.')
     }
-    catch (x) { E('prog').hidden = true; toast('Não foi possível ler este arquivo.') }
+    catch (x) { E('prog').hidden = true; E('pm').textContent = ''; console.error(x); toast(/^lib:/.test(x.message) ? 'Biblioteca de ' + x.message.slice(4) + ' não carregou. Verifique a internet e recarregue a página.' : 'Não foi possível ler este arquivo.') }
+    finally { e.target.value = '' }
 };
 document.querySelectorAll('label.drop').forEach(d => {
     const i = d.querySelector('input');
