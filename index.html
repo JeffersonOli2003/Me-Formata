@@ -225,7 +225,15 @@
         </div>
         <div class="ph" id="ph2">
             <h2 class="ft-t">Formatar nas normas ABNT</h2>
-            <p class="sub">Cole ou importe o texto e baixe em DOCX ou PDF.</p>
+            <p class="sub">Analise, revise o relatório, aplique as correções e baixe em DOCX ou PDF.</p>
+            <ol class="stp" id="stp">
+                <li class="cur">Envio</li>
+                <li>Análise</li>
+                <li>Relatório</li>
+                <li>Formatação</li>
+                <li>Comparação</li>
+                <li>Exportação</li>
+            </ol>
         </div>
         <!-- PÁGINA 1: CONVERSOR -->
         <section class="page" id="p1">
@@ -299,15 +307,27 @@
                         <div><label class="l" for="ano">Ano</label><input class="t" id="ano" inputmode="numeric"></div>
                     </div>
                 </details>
-                <div class="row"><button class="pri" id="fmtBtn">3. Formatar</button></div>
-                <p class="hint">Só a formatação é alterada. As palavras do seu texto são mantidas.</p>
+                <div class="row"><button class="pri" id="anBtn">Analisar documento</button><button class="pri"
+                        id="fmtBtn" disabled>Aplicar correções seguras</button></div>
+                <p class="hint">Primeiro o sistema analisa e mostra o relatório. Nada é alterado até você aplicar as
+                    correções, e as palavras do seu texto são sempre mantidas.</p>
             </div>
             <div class="card">
-                <strong>4. Revisar e 5. Exportar</strong>
+                <strong>Relatório, comparação e exportação</strong>
                 <div><progress id="prog" max="100" value="0" hidden style="width:100%"></progress><span id="pm"
                         class="hint"></span></div>
-                <div class="paper-box" style="margin-top:8px">
-                    <div class="paper" id="paper"></div>
+                <details open id="repBox" hidden>
+                    <summary id="repS">Relatório de conformidade</summary>
+                    <div id="rep"></div>
+                </details>
+                <div class="cmpwrap">
+                    <div class="pills" style="margin-top:8px"><input type="radio" name="vw" id="vwC" checked><label
+                            for="vwC">Documento corrigido</label><input type="radio" name="vw" id="vwO"><label
+                            for="vwO">Texto original</label></div>
+                    <div class="paper-box" id="vc" style="margin-top:8px">
+                        <div class="paper" id="paper"></div>
+                    </div>
+                    <div id="orig" class="orig" aria-label="Texto original com os trechos assinalados"></div>
                 </div>
                 <div class="row">
                     <button class="pri" id="dx">⬇️ DOCX</button><button class="pri" id="dl">⬇️ PDF</button>

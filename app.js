@@ -89,44 +89,49 @@ const KNOWN = /^(\d+(\.\d+)*\.?\s+)?(introdu[cç][ãa]o|desenvolvimento|conclus[
 const UNNUM = /^(resumo|abstract|resumen|refer[êe]ncias|agradecimentos|ap[êe]ndices?|anexos?|gloss[áa]rio|sum[áa]rio|ep[íi]grafe|dedicat[óo]ria)/i;
 const LIST = /^(?:([-•*–—])|(\d{1,2}[.)])|([a-z]\)))\s+(\S.*)$/;
 const isCaps = s => /\p{L}/u.test(s) && s === s.toUpperCase() && s.toLowerCase() !== s && (s.length >= 4 || / /.test(s));
-let LVFIX = 0, LASTFIX = 0, CHG = [], LOG = [];
-function headOf(l) {
+let LVFIX = 0, LASTFIX = 0, CHG = [], LOG = [], LVLOG = [];
+function headOf(l, iso) {
     let m;
-    if (m = l.match(/^(#{1,3})\s+(.+)$/)) return { lv: m[1].length, s: m[2].trim() };
+    if (m = l.match(/^(#{1,3})\s+(.+)$/)) {
+        let s = m[2].trim(), no = '', dot = false, n;
+        if (n = s.match(/^(\d+(?:\.\d+)*)(\.?)\s+(\S.*)$/)) { no = n[1]; dot = !!n[2]; s = n[3] }
+        return { lv: m[1].length, s, no, dot }
+    }
     if (l.length > 80 || /[.!?;,:]$/.test(l) || /^\[/.test(l)) return null;
     if (m = l.match(/^(\d+(?:\.\d+)*)(\.?)\s+(\p{Lu}.*)$/u)) {
         const lv = m[1].split('.').length;
-        if (lv > 1) return { lv: Math.min(lv, 3), s: m[3] };
-        if (!m[2]) return { lv: 1, s: m[3] };
-        return (isCaps(m[3]) || KNOWN.test(m[3])) ? { lv: 1, s: m[3] } : null
+        if (lv > 1) return { lv: Math.min(lv, 3), s: m[3], no: m[1], dot: !!m[2] };
+        if (!m[2]) return { lv: 1, s: m[3], no: m[1], dot: false };
+        return (isCaps(m[3]) || KNOWN.test(m[3]) || iso) ? { lv: 1, s: m[3], no: m[1], dot: true } : null
     }
     if (/^\d/.test(l)) return null;
-    return (isCaps(l) || KNOWN.test(l)) ? { lv: 1, s: l } : null
+    return (isCaps(l) || KNOWN.test(l)) ? { lv: 1, s: l, no: '', dot: false } : null
 }
 function parse(t) {
-    const out = []; let para = [], ref = false, inList = false, inQ = false; LVFIX = 0;
-    const flush = () => { if (para.length) { out.push({ t: 'p', s: para.join(' ') }); para = [] } };
-    for (const raw of t.replace(/\r/g, '').split('\n')) {
-        const l = raw.replace(/[ \t\u00a0]+/g, ' ').trim();
+    const out = [], lines = t.replace(/\r/g, '').split('\n'); let para = [], pl = 0, ref = false, inList = false, inQ = false; LVFIX = 0; LVLOG = [];
+    const flush = () => { if (para.length) { out.push({ t: 'p', s: para.join(' '), ln: pl, nl: para.length }); para = [] } };
+    for (let i = 0; i < lines.length; i++) {
+        const l = lines[i].replace(/[ \t\u00a0]+/g, ' ').trim();
         if (!l) { flush(); inList = inQ = false; continue }
-        const hd = headOf(l);
-        if (hd) { flush(); inList = inQ = false; out.push({ t: 'h', lv: hd.lv, s: hd.s }); ref = hd.lv === 1 && /^refer[êe]ncias/i.test(hd.s); continue }
+        const iso = (i === 0 || !lines[i - 1].trim()) && (i + 1 >= lines.length || !lines[i + 1].trim());
+        const hd = headOf(l, iso);
+        if (hd) { flush(); inList = inQ = false; out.push({ t: 'h', ...hd, ln: i + 1 }); ref = hd.lv === 1 && /^refer[êe]ncias/i.test(hd.s); continue }
         if (ref) {
             flush(); const pv = out[out.length - 1];
-            if (pv && pv.t === 'r' && /^\p{Ll}/u.test(l)) pv.s += ' ' + l; else out.push({ t: 'r', s: l }); continue
+            if (pv && pv.t === 'r' && !URLONLY.test(pv.s) && !/[.)]$/.test(pv.s) && (/^\p{Ll}/u.test(l) || (/^https?:/i.test(l) && /:\s*$/.test(pv.s)))) { pv.s += ' ' + l; pv.nl++ } else out.push({ t: 'r', s: l, ln: i + 1, nl: 1 }); continue
         }
         let m;
         if (m = l.match(/^>\s?(.*)$/)) {
             flush(); inList = false; const pv = out[out.length - 1];
-            if (inQ && pv && pv.t === 'q') pv.s += ' ' + m[1]; else out.push({ t: 'q', s: m[1] }); inQ = true; continue
+            if (inQ && pv && pv.t === 'q') { pv.s += ' ' + m[1]; pv.nl++ } else out.push({ t: 'q', s: m[1], ln: i + 1, nl: 1 }); inQ = true; continue
         }
         inQ = false;
-        if (m = l.match(LIST)) { flush(); out.push({ t: 'li', ord: !!(m[2] || m[3]), mk: m[1] ? '•' : (m[2] || m[3]), s: m[4] }); inList = true; continue }
-        if (inList) { out[out.length - 1].s += ' ' + l; continue }
-        para.push(l)
+        if (m = l.match(LIST)) { flush(); out.push({ t: 'li', ord: !!(m[2] || m[3]), mk: m[1] ? '•' : (m[2] || m[3]), mr: m[1] || '', s: m[4], ln: i + 1, nl: 1 }); inList = true; continue }
+        if (inList) { const pv = out[out.length - 1]; pv.s += ' ' + l; pv.nl++; continue }
+        if (!para.length) pl = i + 1; para.push(l)
     }
     flush(); let prev = 0;
-    out.forEach(b => { if (b.t === 'h') { const o = b.lv; b.lv = Math.min(b.lv, prev + 1); if (b.lv !== o) LVFIX++; prev = b.lv } });
+    out.forEach(b => { if (b.t === 'h') { const o = b.lv; b.lv = Math.min(b.lv, prev + 1); if (b.lv !== o) { LVLOG.push({ ln: b.ln, s: b.s, from: o, to: b.lv }); LVFIX++ } prev = b.lv } });
     return out
 }
 function ser(bl) {
@@ -189,6 +194,143 @@ function citeCheck(bl) {
     return { cit: A, ok: ok.n, ref: rp, nref: refs.length, miss, alpha: refs.length < 2 || refs.every((r, i) => r === sorted[i]), qn: A.length }
 }
 
+/* ---------- ANÁLISE (NBR 14724 · 6024 · 6023 · 10520) ---------- */
+const URLONLY = /^(?:https?:\/\/|www\.)\S+$/i;
+let ANA = null;
+function ctx(bl, i) { if (bl[i].t === 'h') return 'linha ' + bl[i].ln; let h = null; for (let k = i - 1; k >= 0; k--)if (bl[k].t === 'h') { h = bl[k]; break } return 'linha ' + bl[i].ln + (h ? ` (seção «${h.s.slice(0, 35)}»)` : '') }
+function citations(bl) {
+    const C = [];
+    bl.forEach((b, i) => {
+        if (!['p', 'li', 'q'].includes(b.t)) return; const t = b.s; let m; const re = /\(([^()]{2,160})\)/g;
+        while ((m = re.exec(t))) {
+            const g = m[1]; if (!YR.test(g)) continue;
+            if (/[A-ZÀ-Ú][\wà-úÀ-Ú'’-]+(?: et al\.?)?\s*$/.test(t.slice(Math.max(0, m.index - 30), m.index)) && /^\s*(?:1[5-9]\d\d|20\d\d)/.test(g)) continue;
+            g.split(';').forEach(seg => {
+                const mm = seg.trim().match(/^(.*?),?\s*((?:1[5-9]\d\d|20\d\d)[a-z]?|s\.?\s?d\.?)\s*(?:,\s*(p{1,2}\.\s*[\d\-–, ]+|p[áa]gs?\.?\s*[\d\-–, ]+))?$/i);
+                if (mm) C.push({ i, raw: '(' + seg.trim() + ')', au: mm[1].trim(), yr: mm[2], pg: !!mm[3], kind: 'par', idx: m.index, t, ln: b.ln })
+            })
+        }
+        const rn = /([A-ZÀ-Ú][\wà-úÀ-Ú'’-]+(?: et al\.?)?)\s*\(((?:1[5-9]\d\d|20\d\d)[a-z]?)(?:,\s*(p{1,2}\.\s*[\d\-–]+))?\)/g;
+        while ((m = rn.exec(t))) C.push({ i, raw: m[0], au: m[1], yr: m[2], pg: !!m[3], kind: 'nar', idx: m.index, t, ln: b.ln })
+    });
+    return C
+}
+const ckey = s => strip(s).toUpperCase().split(/;| ET AL| E /)[0].replace(/[^A-Z' -]/g, '').trim();
+function sortRefs(bl) {
+    const idx = bl.map((b, i) => b.t === 'r' && !URLONLY.test(b.s) ? i : -1).filter(i => i >= 0); if (idx.length < 2) return 0;
+    const a = idx.map(i => bl[i]).sort((x, y) => strip(x.s).toUpperCase().localeCompare(strip(y.s).toUpperCase(), 'pt')); idx.forEach((i, k) => bl[i] = a[k]); return idx.length
+}
+function analyzeDoc(raw, c) {
+    const bl = parse(raw), lvlog = [...LVLOG], lines = raw.replace(/\r/g, '').split('\n'), F = [];
+    const A = (cat, st, t, o = {}) => F.push({ cat, st, t, ...o });
+    const lim = cat => { let n = 0; return (st, t, o) => { n++; if (n <= 10) A(cat, st, t, o); else if (n === 11) A(cat, st, '…e mais ocorrências do mesmo tipo', { norma: o.norma, why: 'Há outros itens como os listados acima.', fix: 'Revise o restante do documento.' }) } };
+    const hs = bl.map((b, i) => ({ b, i })).filter(x => x.b.t === 'h'), h1 = hs.filter(x => x.b.lv === 1 && !UNNUM.test(x.b.s)).map(x => x.b);
+    /* NBR 6024: numeração progressiva */
+    const cn = [0, 0, 0], exp = new Map(), nm = lim('Numeração');
+    hs.forEach(({ b }) => { if (b.lv === 1 && UNNUM.test(b.s)) { exp.set(b, ''); return } if (b.lv > 1 && !cn[0]) cn[0] = 1; cn[b.lv - 1]++; for (let k = b.lv; k < 3; k++)cn[k] = 0; exp.set(b, cn.slice(0, b.lv).join('.')) });
+    const nNum = hs.filter(x => x.b.no).length; let nProb = 0;
+    hs.forEach(({ b, i }) => {
+        const e = exp.get(b), W = ctx(bl, i);
+        if (!e && b.no) { nProb++; nm('auto', `Elemento sem indicativo numérico recebeu número: «${b.no} ${b.s.slice(0, 30)}»`, { ln: b.ln, where: W, norma: 'NBR 6024 e NBR 14724', why: 'Referências, Resumo, Agradecimentos e similares não levam número de seção e são centralizados.', fix: 'Remover o número e centralizar o título.' }) }
+        else if (e && b.no && b.no !== e) { nProb++; nm('auto', `Numeração inconsistente: «${b.no} ${b.s.slice(0, 35)}»`, { ln: b.ln, where: W, norma: 'NBR 6024', why: `A numeração progressiva deve seguir a ordem das seções. Pela posição no texto, o número esperado é ${e}.`, fix: `Renumerar de ${b.no} para ${e}.` }) }
+        else if (e && !b.no && nNum) { nProb++; nm('auto', `Título sem número entre seções numeradas: «${b.s.slice(0, 40)}»`, { ln: b.ln, where: W, norma: 'NBR 6024', why: 'Se o trabalho usa numeração progressiva, todas as seções do texto devem ser numeradas.', fix: `Numerar como ${e}.` }) }
+    });
+    const dots = hs.filter(x => x.b.dot && x.b.no);
+    dots.length && A('Numeração', 'auto', `${dots.length} título(s) com ponto depois do número (ex.: «${dots[0].b.no}.»)`, { ln: dots[0].b.ln, lns: dots.map(x => x.b.ln), where: 'linha ' + dots[0].b.ln, norma: 'NBR 6024', why: 'O indicativo numérico é seguido de espaço, sem ponto, hífen ou travessão.', fix: 'Remover o ponto depois do número.' });
+    hs.forEach(({ b, i }, k) => {
+        if (b.lv >= 3 || (b.lv === 1 && UNNUM.test(b.s))) return; let ch = 0; for (let j = k + 1; j < hs.length && hs[j].b.lv > b.lv; j++)if (hs[j].b.lv === b.lv + 1) ch++;
+        ch === 1 && A('Numeração', 'confirm', `Seção com uma única subseção: «${b.s.slice(0, 40)}»`, { ln: b.ln, where: ctx(bl, i), norma: 'NBR 6024 (boa prática)', why: 'Em geral, uma seção só é dividida quando há pelo menos duas subseções.', fix: 'Junte a subseção ao texto da seção ou crie outra subseção. Não alterei o conteúdo.' })
+    });
+    /* hierarquia */
+    lvlog.forEach(x => A('Hierarquia', 'auto', `Salto de nível no título «${x.s.slice(0, 40)}» (de nível ${x.from} para ${x.to})`, { ln: x.ln, where: 'linha ' + x.ln, norma: 'NBR 6024', why: 'Uma subseção só pode aparecer dentro de uma seção do nível imediatamente superior.', fix: `Título ajustado para o nível ${x.to}.` }));
+    const cap = h1.filter(b => isCaps(b.s)).length;
+    h1.length > 1 && cap && cap < h1.length && A('Hierarquia', 'auto', 'Seções primárias escritas de formas diferentes (algumas em maiúsculas, outras não)', { ln: h1[0].ln, lns: h1.map(b => b.ln), norma: 'NBR 6024 e NBR 14724', why: 'Títulos do mesmo nível devem ter o mesmo destaque gráfico.', fix: 'Seções primárias padronizadas em MAIÚSCULAS e negrito; secundárias em negrito; terciárias em itálico.' });
+    const refLn = (hs.find(x => x.b.lv === 1 && /^refer/i.test(x.b.s)) || { b: { ln: 1e9 } }).b.ln, hset = new Set(bl.filter(b => b.t === 'h').map(b => b.ln)), tc = lim('Hierarquia');
+    lines.forEach((raw0, i) => {
+        const l = raw0.trim(); if (!l || i + 1 >= refLn || hset.has(i + 1) || (i > 0 && lines[i - 1].trim())) return;
+        let k = i + 1; while (k < lines.length && !lines[k].trim()) k++; const nx = lines[k] || '', nxH = hset.has(k + 1), w = l.split(/\s+/).length;
+        if (l.length >= 8 && l.length <= 70 && w >= 2 && w <= 9 && /^\p{Lu}/u.test(l) && !/[.!?;,:]$/.test(l) && !LIST.test(l) && !/^[>#\[(]/.test(l) && (nx.trim().length > 60 || nxH) && !NOTE_START.test(l))
+            tc('confirm', `Possível título não identificado: «${l}»`, { ln: i + 1, where: 'linha ' + (i + 1), norma: 'NBR 6024 / NBR 14724', why: 'A linha parece um título (curta, sem ponto final, antes de um parágrafo), mas não tem número nem marcação. Não é possível ter certeza.', fix: 'Se for um título, comece a linha com # (seção) ou ## (subseção).' })
+    });
+    /* parágrafos e formatação */
+    const ind = lines.map((l, i) => /^(?: {2,}|\t)\S/.test(l) && !LIST.test(l.trim()) && !hset.has(i + 1) ? i + 1 : 0).filter(Boolean);
+    ind.length && A('Parágrafos', 'auto', `${ind.length} linha(s) com recuo feito à mão (espaços ou tabulação)`, { ln: ind[0], lns: ind, where: 'linhas ' + ind.slice(0, 5).join(', ') + (ind.length > 5 ? '…' : ''), norma: 'NBR 14724 e padrão acadêmico', why: 'O recuo da primeira linha deve ser padronizado (1,25 cm), e não digitado com espaços.', fix: 'Espaços removidos e recuo de 1,25 cm aplicado a todos os parágrafos.' });
+    const hw = bl.filter(b => b.t === 'p' && b.nl > 1);
+    hw.length && A('Parágrafos', 'auto', `${hw.length} parágrafo(s) com quebras de linha forçadas no meio`, { ln: hw[0].ln, lns: hw.map(b => b.ln), where: 'a partir da linha ' + hw[0].ln, norma: 'NBR 14724', why: 'Cada parágrafo deve fluir como um bloco único, justificado.', fix: 'Linhas unidas em um único parágrafo, sem alterar nenhuma palavra.' });
+    const ds = lines.map((l, i) => /\S {2,}\S/.test(l) ? i + 1 : 0).filter(Boolean);
+    ds.length && A('Parágrafos', 'auto', `${ds.length} linha(s) com espaços duplicados`, { ln: ds[0], lns: ds, where: 'linha ' + ds[0] + (ds.length > 1 ? ' e outras' : ''), norma: 'NBR 14724', why: 'Espaçamento irregular prejudica o alinhamento justificado.', fix: 'Espaços extras removidos.' });
+    const bk = (raw.match(/\n[ \t]*\n[ \t]*\n/g) || []).length;
+    bk && A('Parágrafos', 'auto', `${bk} trecho(s) com várias linhas em branco seguidas`, { norma: 'NBR 14724', why: 'O espaçamento entre blocos deve ser uniforme.', fix: 'Linhas em branco padronizadas.' });
+    const mrs = new Set(bl.filter(b => b.t === 'li' && b.mr).map(b => b.mr));
+    mrs.size > 1 && A('Parágrafos', 'auto', `Marcadores de lista diferentes no mesmo documento (${[...mrs].join(' ')})`, { ln: bl.find(b => b.t === 'li' && b.mr).ln, lns: bl.filter(b => b.t === 'li' && b.mr).map(b => b.ln), norma: 'Padrão acadêmico', why: 'Listas equivalentes devem ter a mesma aparência.', fix: 'Marcadores uniformizados, um item por linha.' });
+    const np = lim('Parágrafos');
+    bl.forEach((b, i) => { if (b.t === 'p' && !/[.!?:;"”)…]$/.test(b.s) && !NOTE_START.test(b.s) && !URLONLY.test(b.s)) np('confirm', `Parágrafo sem pontuação final: «${b.s.slice(0, 45)}…»`, { ln: b.ln, where: ctx(bl, i), norma: 'NBR 14724', why: 'Pode ser uma frase incompleta ou um título digitado como parágrafo.', fix: 'Revise o trecho. Não alterei o texto.' }) });
+    A('Formatação da página', 'unverif', 'Margens, fonte, tamanho e espaçamento do arquivo original não puderam ser verificados', { norma: 'NBR 14724', why: 'O texto colado ou importado não traz informações de formatação (só as palavras).', fix: 'O documento final recebe A4, margens 3/3/2/2 cm, fonte 12, espaçamento 1,5, recuo de 1,25 cm e justificado.' });
+    /* NBR 10520: citações */
+    const refs = bl.map((b, i) => ({ b, i })).filter(x => x.b.t === 'r' && !URLONLY.test(x.b.s)).map(x => ({ ...x, sn: strip(x.b.s).toUpperCase().split(/[,.]/)[0].trim(), yr: (x.b.s.match(/\b(?:1[5-9]\d\d|20\d\d)\b/) || [''])[0] }));
+    const cites = citations(bl), ct = lim('Citações'), match = cc => { const k = ckey(cc.au); return k ? refs.filter(r => r.sn === k || r.sn.startsWith(k) || (r.sn.length > 2 && k.startsWith(r.sn))) : [] };
+    const seen = new Set(); let okC = 0;
+    cites.forEach(cc => {
+        const id = cc.i + '|' + cc.raw; if (seen.has(id)) return; seen.add(id); const W = ctx(bl, cc.i);
+        if (!cc.au || /\b(autor|ano|fonte|sobrenome|xxxx*)\b|\?\?/i.test(cc.au)) { ct('confirm', `Citação sem autor identificável: ${cc.raw}`, { ln: cc.ln, where: W, norma: 'NBR 10520', why: 'A citação precisa indicar o autor (ou entidade) e o ano.', fix: 'Informe o autor da obra. Não posso inventá-lo.' }); return }
+        const ms = match(cc), yr4 = (cc.yr.match(/\d{4}/) || [''])[0];
+        if (!refs.length || !ms.length) ct('confirm', `Citação sem referência correspondente: ${cc.raw}`, { ln: cc.ln, where: W, norma: 'NBR 10520 e NBR 6023', why: 'Toda obra citada no texto deve constar na lista de referências.', fix: 'Inclua a referência completa de ' + cc.au + ' ou revise a citação. Não encontrei os dados dessa obra no documento.' });
+        else if (yr4 && !ms.some(r => r.yr === yr4)) ct('confirm', `Ano da citação diferente da referência: ${cc.raw}`, { ln: cc.ln, where: W, norma: 'NBR 10520 e NBR 6023', why: `A citação indica ${yr4}, mas a referência de ${ms[0].sn} indica ${ms[0].yr || '(sem ano)'}.`, fix: 'Confira qual é o ano correto na obra. Não alterei nenhum dos dois.' });
+        else okC++;
+        const pre = cc.t.slice(Math.max(0, cc.idx - 400), cc.idx), post = cc.t.slice(cc.idx + cc.raw.length, cc.idx + cc.raw.length + 400), dir = /[“"][^”"]{15,}[”"]\s*$/.test(pre) || (cc.kind === 'nar' && /^[\s,:]*[“"][^”"]{15,}[”"]/.test(post));
+        if (dir && !cc.pg) ct('confirm', `Citação direta sem página: ${cc.raw}`, { ln: cc.ln, where: W, norma: 'NBR 10520', why: 'Em citações diretas, a página (ou seção) da fonte é obrigatória.', fix: 'Acrescente a página, por exemplo: ' + cc.raw.replace(/\)$/, ', p. __)') + '. Não conheço a página.' });
+        if (cc.kind === 'par' && cc.au && cc.au !== cc.au.toUpperCase() && !/^s\.?\s?d/i.test(cc.au)) ct('confirm', `Autor entre parênteses fora de caixa alta: ${cc.raw}`, { ln: cc.ln, where: W, norma: 'NBR 10520', why: 'Quando o autor aparece entre parênteses, o sobrenome vai em MAIÚSCULAS.', fix: 'Escreva ' + cc.raw.replace(cc.au, cc.au.toUpperCase()) + '. Não alterei o texto sem sua confirmação.' })
+    });
+    const dq = lim('Citações');
+    bl.forEach((b, i) => {
+        if (b.t === 'q' && !/\([^()]*(?:\d{4}|s\.?\s?d)[^()]*\)\s*\.?$/.test(b.s)) dq('confirm', `Citação longa sem origem identificada: «${b.s.slice(0, 40)}…»`, { ln: b.ln, where: ctx(bl, i), norma: 'NBR 10520', why: 'Toda citação deve indicar a fonte (autor, ano e página).', fix: 'Acrescente (AUTOR, ano, p. _) ao final.' });
+        if (['p', 'li'].includes(b.t)) {
+            const rq = /[“"]([^”"]+)[”"]/g; let m; while ((m = rq.exec(b.s))) {
+                const nw = m[1].split(/\s+/).length, aft = b.s.slice(m.index + m[0].length, m.index + m[0].length + 90);
+                if (nw >= 40) dq('confirm', `Possível citação longa dentro do parágrafo (${nw} palavras): «${m[1].slice(0, 35)}…»`, { ln: b.ln, where: ctx(bl, i), norma: 'NBR 10520', why: 'Citação direta com mais de 3 linhas deve ficar em bloco recuado 4 cm, em fonte menor e sem aspas.', fix: 'Se for citação direta, mova-a para um parágrafo iniciado por >.' });
+                else if (nw >= 6 && !/\([^()]*(?:\d{4}|s\.?\s?d)[^()]*\)/.test(aft) && !cites.some(x => x.i === i && x.kind === 'nar')) dq('confirm', `Trecho entre aspas sem fonte identificável: «${m[1].slice(0, 40)}…»`, { ln: b.ln, where: ctx(bl, i), norma: 'NBR 10520', why: 'Texto entre aspas é citação direta e precisa de autor, ano e página.', fix: 'Indique a fonte ou retire as aspas. Não alterei o texto.' })
+            }
+        }
+    });
+    cites.length && !ANA_okc(F) && okC && A('Citações', 'ok', `${okC} citação(ões) com autor, ano e referência correspondente`, {});
+    /* NBR 6023: referências */
+    const rf = lim('Referências'), urls = bl.map((b, i) => ({ b, i })).filter(x => ['p', 'r', 'li'].includes(x.b.t) && URLONLY.test(x.b.s));
+    urls.forEach(({ b, i }) => rf('confirm', `Endereço de site isolado, sem identificação bibliográfica: ${b.s.slice(0, 60)}`, { ln: b.ln, where: ctx(bl, i), norma: 'NBR 6023', why: 'Um link sozinho não é uma referência: faltam autor, título, data de publicação e data de acesso.', fix: 'Complete: AUTOR. Título da página. Site, ano. Disponível em: <' + b.s.slice(0, 40) + '…>. Acesso em: dia mês ano. Não consigo descobrir esses dados.' }));
+    const cr = refs.filter(r => !urls.some(u => u.b === r.b));
+    cr.forEach(({ b, i }) => {
+        const s = b.s, W = ctx(bl, i), mis = [], short = '«' + s.slice(0, 38) + '…»';
+        if (!/^[A-ZÀ-Ú][A-ZÀ-Ú'’ .&-]+,\s+\S|^[A-ZÀ-Ú][A-ZÀ-Ú ]{2,}[.,]/.test(s)) mis.push('autor no formato SOBRENOME, Nome');
+        if (!/\b(?:1[5-9]\d\d|20\d\d)\b|\bs\.?\s?d\b/i.test(s)) mis.push('ano de publicação');
+        if (s.replace(/^[^.]*\./, '').trim().length < 8) mis.push('título');
+        if (/https?:\/\//.test(s)) { if (!/Dispon[ií]vel em/i.test(s)) mis.push('«Disponível em:»'); if (!/Acesso em/i.test(s)) mis.push('«Acesso em:» (data de acesso)') }
+        if (mis.length) rf('confirm', `Referência incompleta ${short}`, { ln: b.ln, where: W, norma: 'NBR 6023', why: 'Faltam elementos essenciais: ' + mis.join(', ') + '.', fix: 'Complete com os dados da obra. Não invento dados ausentes.' });
+        else if (!/https?:\/\//.test(s) && !/\bv\.\s*\d|\bn\.\s*\d|\bp\.\s*\d|\bp\.\s*\d/.test(s) && !/:\s*[^.,]{2,},?\s*(?:1[5-9]\d\d|20\d\d)/.test(s)) rf('unverif', `Não foi possível identificar local e editora (ou periódico) em ${short}`, { ln: b.ln, where: W, norma: 'NBR 6023', why: 'Livros exigem «Local: Editora, ano»; artigos exigem periódico, volume, número e páginas. O tipo da obra não pôde ser confirmado.', fix: 'Confira se a referência está completa para o tipo de documento.' })
+    });
+    const dup = new Set(); cr.forEach(r => { const k = strip(r.b.s).toLowerCase().replace(/\W/g, ''); dup.has(k) ? rf('confirm', `Referência repetida «${r.b.s.slice(0, 38)}…»`, { ln: r.b.ln, where: ctx(bl, r.i), norma: 'NBR 6023', why: 'A mesma obra aparece mais de uma vez.', fix: 'Mantenha apenas uma.' }) : dup.add(k) });
+    const rc = lim('Referências');
+    cr.forEach(r => { if (!cites.some(cc => { const k = ckey(cc.au); return k && (r.sn === k || r.sn.startsWith(k) || k.startsWith(r.sn)) })) rc('confirm', `Referência sem citação identificável no texto: «${r.b.s.slice(0, 38)}…»`, { ln: r.b.ln, where: ctx(bl, r.i), norma: 'NBR 6023 e NBR 10520', why: 'Toda obra da lista deve ser citada no texto (autor e ano).', fix: 'Cite a obra no texto ou retire-a da lista, se não foi usada.' }) });
+    if (!refs.length && !urls.length && cites.length) A('Referências', 'confirm', 'Há citações, mas não há lista de referências', { norma: 'NBR 6023', why: 'As obras citadas precisam constar numa seção de Referências ao final.', fix: 'Adicione a seção REFERÊNCIAS com as obras citadas.' });
+    const so = [...refs].sort((a, b) => strip(a.b.s).toUpperCase().localeCompare(strip(b.b.s).toUpperCase(), 'pt'));
+    refs.length > 1 && refs.some((r, i) => r !== so[i]) && A('Referências', 'confirm', 'Referências fora de ordem alfabética', { ln: refs[0].b.ln, lns: refs.map(r => r.b.ln), where: 'a partir da linha ' + refs[0].b.ln, norma: 'NBR 6023', why: 'As referências devem estar em ordem alfabética pelo sobrenome do autor.', fix: 'Reordenar em ordem alfabética (apenas muda a ordem das linhas).', act: 'sortRefs' });
+    /* estrutura do tipo de documento */
+    const hu = h1.map(b => strip(b.s).toUpperCase()).join('|') + '|' + hs.filter(x => UNNUM.test(x.b.s)).map(x => strip(x.b.s).toUpperCase()).join('|');
+    const has = (re) => re.test(hu), mid = h1.some(b => !/INTRODU|CONCLU|CONSIDERA|RESUMO|REFER/i.test(strip(b.s)));
+    const R = { escolar: ['INTRODU', 'DESENV', 'CONCLU|CONSIDERA', 'REFER'], relatorio: ['INTRODU', 'DESENV', 'CONCLU|CONSIDERA'], artigo: ['RESUMO', 'INTRODU', 'DESENV', 'CONCLU|CONSIDERA', 'REFER'], tcc: ['RESUMO', 'INTRODU', 'DESENV', 'CONCLU|CONSIDERA', 'REFER'] }[c.tipo];
+    const NM = { 'INTRODU': 'Introdução', 'DESENV': 'Desenvolvimento', 'CONCLU|CONSIDERA': 'Conclusão ou Considerações finais', 'REFER': 'Referências', 'RESUMO': 'Resumo' }, tl = { escolar: 'trabalho escolar', relatorio: 'relatório', artigo: 'artigo científico', tcc: 'TCC' }[c.tipo];
+    if (R) {
+        R.forEach(k => { const okk = k === 'DESENV' ? (has(/DESENV/) || mid) : has(new RegExp(k)); if (!okk) A('Estrutura', 'confirm', `Elemento esperado para ${tl} não encontrado: ${NM[k]}`, { norma: 'NBR 14724', why: 'A estrutura usual desse tipo de trabalho inclui este elemento. Sua instituição pode exigir algo diferente.', fix: 'Adicione a seção ou confirme que ela não é exigida.' }) });
+        c.tipo === 'artigo' && !/^palavras-chave\s*:/im.test(raw) && A('Estrutura', 'confirm', 'Palavras-chave não encontradas', { norma: 'Estrutura usual de artigo (NBR 6022)', why: 'Artigos costumam trazer palavras-chave após o resumo.', fix: 'Acrescente a linha «Palavras-chave: …».' });
+        c.tipo === 'tcc' && A('Estrutura', 'unverif', 'Sumário, listas e demais elementos pré-textuais não são gerados nesta versão', { norma: 'NBR 14724', why: 'Dependem de numeração de páginas e exigências da instituição.', fix: 'Inclua-os manualmente no Word, se forem exigidos.' })
+    }
+    else A('Estrutura', 'unverif', 'Estrutura exigida para «Outro» depende da orientação do professor', { norma: 'NBR 14724', why: 'Não há estrutura-padrão para este tipo.', fix: 'Escolha um tipo específico para verificar a estrutura.' });
+    const f2 = o => Object.entries(o).filter(([, v]) => !v).map(([k]) => k);
+    if (c.capa || c.rosto) { const m = f2({ 'instituição': c.inst, autor: c.aut, 'título': c.tit, cidade: c.cid, ano: c.ano }); m.length && A('Pré-textuais', 'confirm', 'Dados da capa/folha de rosto incompletos: faltam ' + m.join(', '), { norma: 'NBR 14724', why: 'Esses dados só podem ser informados por você.', fix: 'Preencha em «Dados do trabalho». O que ficar vazio não é inventado.' }) }
+    const nt = bl.filter(isNote); nt.length && A('Anotações', 'confirm', `${nt.length} possível(is) anotação(ões) informal(is) no texto`, { ln: nt[0].ln, lns: nt.map(b => b.ln), where: 'linha ' + nt[0].ln, norma: 'NBR 14724 (texto formal)', why: 'Notas de teste e comentários não fazem parte do trabalho.', fix: 'Depois de aplicar, o quadro amarelo pergunta se deseja remover cada uma. Nada é apagado sozinho.' });
+    hs.length && !nProb && !lvlog.length && A('Numeração e hierarquia', 'ok', 'Numeração e hierarquia dos títulos coerentes', {});
+    return { F, raw, applied: false }
+}
+function ANA_okc(F) { return F.some(f => f.cat === 'Citações' && f.st === 'ok') }
+
 /* ---------- preview ---------- */
 function render() {
     const c = cfg(), P = E('paper'); P.textContent = '';
@@ -204,7 +346,7 @@ function render() {
         else { e = document.createElement(b.t === 'q' ? 'blockquote' : 'p'); if (b.t === 'r') e.className = 'r'; e.textContent = b.s }
         if (isNote(b) && !ign.has(nkey(b))) e.classList.add('nt'); P.append(e)
     });
-    const k = Math.min(1, (document.querySelector('.paper-box').clientWidth - 24) / 794); P.style.zoom = k || 1
+    const k = Math.min(1, Math.max(.3, (document.querySelector('.paper-box').clientWidth - 24) / 794)); P.style.zoom = k
 }
 
 /* ---------- anotações: perguntar antes de remover ---------- */
@@ -405,16 +547,55 @@ function renderChg() {
     all.forEach(([k, s]) => { const li = document.createElement('li'); li.className = k; li.textContent = s; L.append(li) })
 }
 const st = async (v, m) => { E('prog').hidden = false; E('prog').value = v; E('pm').textContent = m; await new Promise(r => setTimeout(r, 70)) };
-E('fmtBtn').onclick = async () => {
+/* ---------- FLUXO: envio → análise → relatório → formatação → comparação → exportação ---------- */
+function setStage(n) { document.querySelectorAll('#stp li').forEach((li, i) => { li.className = i + 1 < n ? 'done' : i + 1 === n ? 'cur' : '' }) }
+function resetAna() { ANA = null; E('fmtBtn').disabled = true; E('repBox').hidden = true; setStage(1) }
+function repUI() {
+    if (!ANA) return; const final = ANA.applied, B = E('rep'), n = s => ANA.F.filter(f => f.st === s).length; B.textContent = ''; E('repBox').hidden = false;
+    E('repS').textContent = `Relatório de conformidade · ${n('auto')} ${final ? 'corrigidos' : 'a corrigir automaticamente'} · ${n('confirm')} a confirmar · ${n('unverif')} não verificáveis`;
+    [['auto', final ? 'Corrigidos automaticamente' : 'Serão corrigidos automaticamente'], ['confirm', 'Necessitam de confirmação'], ['unverif', 'Não foi possível verificar'], ['ok', 'Verificados, sem problema']].forEach(([s, title]) => {
+        const L = ANA.F.filter(f => f.st === s); if (!L.length) return; const h = document.createElement('h4'); h.className = 'g-' + s; h.textContent = `${title} (${L.length})`; B.append(h);
+        L.forEach(f => {
+            const d = document.createElement('div'); d.className = 'fd f-' + s; const t = document.createElement('strong'); t.textContent = f.t; d.append(t);
+            [['Categoria', f.cat], ['Local', f.where], ['Norma', f.norma], ['Por quê', f.why], ['Sugestão', f.fix]].forEach(([k, v]) => { if (!v) return; const p = document.createElement('div'); p.className = 'fr'; const b = document.createElement('b'); b.textContent = k + ': '; p.append(b, document.createTextNode(v)); d.append(p) });
+            if (f.act && !final) { const lb = document.createElement('label'); lb.className = 'ck'; const cb = document.createElement('input'); cb.type = 'checkbox'; cb.dataset.act = f.act; lb.append(cb, document.createTextNode(' Aplicar esta sugestão ao formatar')); d.append(lb) }
+            B.append(d)
+        })
+    })
+}
+function origUI() {
+    if (!ANA) return; const P = E('orig'), fl = {}; P.textContent = '';
+    ANA.F.forEach(f => (f.lns || (f.ln ? [f.ln] : [])).forEach(n => { if (!fl[n] || f.st === 'confirm') fl[n] = [f.st, f.t] }));
+    ANA.raw.replace(/\r/g, '').split('\n').forEach((l, i) => {
+        const d = document.createElement('div'); d.className = 'ol' + (fl[i + 1] ? ' f-' + fl[i + 1][0] : ''); if (fl[i + 1]) d.title = fl[i + 1][1];
+        const n = document.createElement('span'); n.className = 'n'; n.textContent = i + 1; const t = document.createElement('span'); t.textContent = l || ' '; d.append(n, t); P.append(d)
+    })
+}
+E('anBtn').onclick = async () => {
     const o = E('txt').value; if (!o.trim()) return toast('Cole ou importe um texto primeiro.');
     try {
-        await st(20, 'Lendo o texto…'); const bl = parse(o); LASTFIX = LVFIX; await st(50, 'Organizando títulos, listas e parágrafos…'); E('out').value = ser(bl);
-        await st(75, 'Montando as páginas A4…'); render(); notesUI(); chg(o, bl); REP = null; await measure(); await st(100, 'Pronto!');
-        setTimeout(() => { E('prog').hidden = true; E('pm').textContent = '' }, 700); E('paper').scrollIntoView({ behavior: 'smooth', block: 'start' })
+        setStage(2); await st(25, 'Identificando títulos, citações e referências…'); ANA = analyzeDoc(o, cfg()); await st(70, 'Montando o relatório…');
+        repUI(); origUI(); E('fmtBtn').disabled = false; await st(100, 'Análise concluída'); setStage(3);
+        setTimeout(() => { E('prog').hidden = true; E('pm').textContent = '' }, 600); E('repBox').scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+    catch (e) { E('prog').hidden = true; resetAna(); toast('Erro ao analisar o texto.'); console.error(e) }
+};
+E('fmtBtn').onclick = async () => {
+    if (!ANA) return toast('Analise o documento primeiro.'); const o = ANA.raw;
+    try {
+        setStage(4); await st(20, 'Aplicando as correções seguras…'); const bl = parse(o); LASTFIX = LVFIX;
+        const acts = [...document.querySelectorAll('#rep input[data-act]:checked')].map(x => x.dataset.act); CHG = []; LOG = [];
+        acts.forEach(a => { if (a === 'sortRefs' && sortRefs(bl)) { LOG.push(['k', 'Referências reordenadas em ordem alfabética (confirmado por você).']); ANA.F.forEach(f => { if (f.act === a) { f.st = 'auto'; f.why += ' (aplicado com sua confirmação)'; f.act = null } }) } });
+        E('out').value = ser(bl); await st(60, 'Montando as páginas A4…'); ANA.applied = true; chg(o, bl); render(); notesUI(); repUI(); REP = null; await measure();
+        await st(100, 'Pronto!'); setStage(5); setTimeout(() => { E('prog').hidden = true; E('pm').textContent = '' }, 700); E('vwC').checked = true; render(); E('paper').scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
     catch (e) { E('prog').hidden = true; toast('Erro ao formatar o texto.'); console.error(e) }
 };
-E('clr').onclick = () => { E('txt').value = ''; E('out').value = ''; E('f2').value = ''; ign.clear(); LAST = null; refresh(); toast('Conteúdo limpo.') };
+E('txt').addEventListener('input', () => { if (ANA) resetAna() });
+['vwC', 'vwO'].forEach(i => E(i).addEventListener('change', render));
+['tipo', 'capa', 'rosto', 'num', 'inst', 'aut', 'tit', 'cid', 'ano'].forEach(i => E(i).addEventListener('change', () => { if (ANA && !ANA.applied) { const o = ANA.raw; ANA = analyzeDoc(o, cfg()); repUI(); origUI() } }));
+
+E('clr').onclick = () => { E('txt').value = ''; E('out').value = ''; E('f2').value = ''; E('orig').textContent = ''; ign.clear(); LAST = null; resetAna(); refresh(); toast('Conteúdo limpo.') };
 const PRE = { escolar: [0, 0], artigo: [0, 0], relatorio: [1, 0], tcc: [1, 1] };
 E('tipo').onchange = () => { const p = PRE[E('tipo').value]; if (p) { E('capa').checked = !!p[0]; E('rosto').checked = !!p[1] } refresh() };
 ['fnt', 'tam', 'num', 'capa', 'rosto', 'inst', 'aut', 'tit', 'cid', 'ano'].forEach(i => E(i).addEventListener('input', refresh));
@@ -443,7 +624,7 @@ E('f2').onchange = async e => {
         else { E('prog').hidden = true; return toast('Formato não aceito. Use .txt, .docx ou .pdf.') }
         E('prog').hidden = true; E('pm').textContent = '';
         if (!t.trim()) return toast('Nenhum texto encontrado. Se o PDF for escaneado (imagem), é preciso OCR, que não está disponível aqui.');
-        E('txt').value = t; toast('Arquivo importado. Agora clique em Formatar.')
+        E('txt').value = t; resetAna(); toast('Arquivo importado. Agora clique em Analisar documento.')
     }
     catch (x) { E('prog').hidden = true; toast('Não foi possível ler este arquivo.') }
 };
@@ -479,8 +660,8 @@ function makeDocx() {
 }
 const nome = () => (cfg().tit || 'texto-abnt').replace(/[^\p{L}\p{N} _-]/gu, '').trim().slice(0, 60) || 'texto-abnt';
 const safe = async fn => { try { await fn() } catch (e) { toast(e.message === 'docx' ? 'Biblioteca DOCX não carregou. Verifique a internet.' : e.message === 'pdflib' ? 'Biblioteca de PDF não carregou. Verifique a internet.' : 'Erro ao gerar o arquivo.'); console.error(e) } };
-E('dx').onclick = () => need() && safe(async () => { await st(50, 'Gerando DOCX…'); const b = await makeDocx(); E('prog').hidden = true; E('pm').textContent = ''; await save(nome() + '.docx', b) });
-E('dl').onclick = () => need() && safe(async () => { await st(50, 'Gerando PDF…'); const b = await getPdf(); E('prog').hidden = true; E('pm').textContent = ''; verify(); await save(nome() + '.pdf', b) });
+E('dx').onclick = () => need() && safe(async () => { await st(50, 'Gerando DOCX…'); const b = await makeDocx(); E('prog').hidden = true; E('pm').textContent = ''; await save(nome() + '.docx', b); setStage(6) });
+E('dl').onclick = () => need() && safe(async () => { await st(50, 'Gerando PDF…'); const b = await getPdf(); E('prog').hidden = true; E('pm').textContent = ''; verify(); await save(nome() + '.pdf', b); setStage(6) });
 E('shr').onclick = () => need() && safe(async () => share([{ name: nome() + '.pdf', blob: await getPdf() }]));
 E('pr').onclick = () => need() && (window.print(), toast('Se a impressão não abrir, use Baixar PDF.'));
 E('mail').onclick = () => need() && window.open('mailto:?subject=' + encodeURIComponent(cfg().tit || 'Texto formatado em ABNT') + '&body=' + encodeURIComponent(plain()), '_blank');

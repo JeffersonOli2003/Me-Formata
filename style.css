@@ -1320,3 +1320,140 @@ svg.i {
     flex: 1 1 100%;
     font-size: .9rem
 }
+
+.stp {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 0;
+    margin: 10px 0 0;
+    counter-reset: s
+}
+
+.stp li {
+    counter-increment: s;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--bd);
+    background: var(--card);
+    font-size: .82rem;
+    color: var(--mut)
+}
+
+.stp li::before {
+    content: counter(s) ". ";
+    font-weight: 700
+}
+
+.stp li.cur {
+    background: var(--ac);
+    color: #fff;
+    border-color: var(--ac)
+}
+
+.stp li.done {
+    background: var(--ac2);
+    color: var(--ac);
+    border-color: var(--ac)
+}
+
+.stp li.done::before {
+    content: "✓ "
+}
+
+#rep h4 {
+    margin: 14px 0 4px;
+    font-size: .95rem;
+    color: var(--hd)
+}
+
+.fd {
+    border: 1px solid var(--bd);
+    border-left: 5px solid #8892a6;
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin: 8px 0;
+    font-size: .9rem;
+    background: var(--card)
+}
+
+.fd.f-auto {
+    border-left-color: #1f6fe0
+}
+
+.fd.f-confirm {
+    border-left-color: #d98e04
+}
+
+.fd.f-ok {
+    border-left-color: #12805c
+}
+
+.fr {
+    color: var(--mut);
+    margin-top: 2px
+}
+
+.fr b {
+    color: var(--tx)
+}
+
+.cmpwrap #orig {
+    display: none;
+    max-height: 62vh;
+    overflow: auto;
+    border: 1px solid var(--bd);
+    border-radius: 10px;
+    padding: 8px;
+    background: var(--bg);
+    margin-top: 8px
+}
+
+.cmpwrap:has(#vwO:checked) #orig {
+    display: block
+}
+
+.cmpwrap:has(#vwO:checked) #vc {
+    display: none
+}
+
+.ol {
+    display: flex;
+    gap: 8px;
+    font: 13px/1.5 ui-monospace, Menlo, Consolas, monospace;
+    white-space: pre-wrap;
+    word-break: break-word
+}
+
+.ol .n {
+    color: var(--mut);
+    min-width: 2.4em;
+    text-align: right;
+    flex: none
+}
+
+.ol.f-auto {
+    background: #dbe9ff;
+    color: #0b2a63
+}
+
+.ol.f-confirm {
+    background: #fff3b0;
+    color: #3a2e00
+}
+
+.ol.f-unverif {
+    background: #e6e8ee;
+    color: #222
+}
+
+summary::before {
+    content: "▸";
+    margin-right: 8px;
+    color: var(--ac)
+}
+
+details[open]>summary::before {
+    content: "▾"
+}
