@@ -71,7 +71,7 @@
     <header class="top"><a class="logo" href="#" data-tab="t0"><b>Me-Formata</b><small>Documentos sem
                 complicação</small></a>
         <nav aria-label="Principal"><label for="t0" data-nav="t0">Início</label><label for="t2" data-nav="t2">Formatar
-                ABNT</label><label for="t1" data-nav="t1">Converter arquivos</label><a href="#" data-tab="t0"
+                ABNT</label><label for="t1" data-nav="t1">Converter arquivos</label><a href="#" data-tab="t0" data-go="qr-generator" data-nav="qr-generator">Gerar QR Code</a><a href="#" data-tab="t0"
                 data-go="como" data-nav="como">Como utilizar</a><a href="#" data-tab="t0" data-go="sobre"
                 data-nav="sobre">Sobre</a></nav>
         <a class="enter" href="#" data-tab="t2">Entrar</a>
@@ -217,6 +217,44 @@
                 </ul>
             </div>
         </section>
+        <!-- NOVA FERRAMENTA: GERADOR DE QR CODE (adicionada sem alterar as ferramentas existentes) -->
+        <section class="sec" id="qr-generator">
+            <div class="in">
+                <div class="qr-intro">
+                    <span class="badge">Ferramenta gratuita</span>
+                    <h2>Gere um QR Code a partir de um link</h2>
+                    <p>Insira um endereço da web, gere o código e baixe a imagem para compartilhar.</p>
+                </div>
+                <div class="card qr-card">
+                    <label class="l" for="qrLink">Link que deseja transformar em QR Code</label>
+                    <input class="t" id="qrLink" type="url" placeholder="https://exemplo.com" autocomplete="url" inputmode="url">
+                    <div class="row qr-actions">
+                        <button class="pri" type="button" id="qrGenerate">Gerar QR Code</button>
+                    </div>
+                    <div class="qr-format-bar" aria-label="Opções de exportação do QR Code">
+                        <div class="qr-format-copy">
+                            <strong>Baixar QR Code</strong>
+                            <small>Escolha o formato ideal para compartilhar ou imprimir.</small>
+                        </div>
+                        <label class="qr-format-choice" for="qrFormat">
+                            <span>Formato</span>
+                            <select id="qrFormat" disabled>
+                                <option value="png">PNG — imagem</option>
+                                <option value="jpg">JPG — imagem compacta</option>
+                                <option value="pdf">PDF — impressão</option>
+                                <option value="svg">SVG — vetor</option>
+                            </select>
+                        </label>
+                        <button class="pri" type="button" id="qrDownload" disabled>⬇ Baixar arquivo</button>
+                    </div>
+                    <p class="hint" id="qrStatus" role="status" aria-live="polite">O QR Code será exibido aqui depois da geração.</p>
+                    <div id="qrResult" class="qr-result" hidden>
+                        <div id="qrCanvas" class="qr-canvas" aria-label="QR Code gerado"></div>
+                        <p class="qr-value" id="qrValue"></p>
+                    </div>
+                </div>
+            </div>
+        </section>
     </main>
     <div class="wrap">
         <div class="ph" id="ph1">
@@ -354,6 +392,7 @@
     <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/docx@9.6.1/dist/index.iife.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="app.js"></script>
 </body>
 

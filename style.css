@@ -1445,3 +1445,35 @@ details[open]>summary::before {
     .paper .preview-sheet { min-height: 0; margin: 0; border: 0; break-after: auto; page-break-after: auto; }
     .paper .preview-sheet + .preview-sheet { break-before: page; page-break-before: always; }
 }
+
+
+/* ----- Gerador de QR Code: estilos isolados para não afetar as ferramentas existentes ----- */
+#qr-generator .qr-intro { max-width: 760px; margin: 0 auto 22px; }
+#qr-generator .qr-card { max-width: 760px; margin: 0 auto; }
+#qr-generator .qr-card .t { width: 100%; margin-top: 7px; }
+#qr-generator .qr-actions { margin-top: 16px; flex-wrap: wrap; }
+#qr-generator .qr-result { margin-top: 22px; padding: 22px; border: 1px solid var(--bd); border-radius: 14px; background: var(--bg); text-align: center; }
+#qr-generator .qr-canvas { display: inline-flex; align-items: center; justify-content: center; min-width: 256px; min-height: 256px; padding: 12px; border-radius: 10px; background: #fff; }
+#qr-generator .qr-canvas canvas, #qr-generator .qr-canvas img { display: block; max-width: 100%; height: auto; image-rendering: pixelated; }
+#qr-generator .qr-value { margin: 12px auto 0; max-width: 100%; overflow-wrap: anywhere; color: var(--mut); font-size: 13px; }
+#qr-generator button:disabled { opacity: .55; cursor: not-allowed; }
+@media (max-width: 600px) { #qr-generator .qr-canvas { min-width: 0; width: 100%; } #qr-generator .qr-canvas canvas, #qr-generator .qr-canvas img { max-width: 100%; } }
+
+
+/* ----- Barra exclusiva de exportação do gerador de QR Code ----- */
+#qr-generator .qr-format-bar {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    margin-top: 16px; padding: 16px; border: 1px solid var(--bd); border-radius: 14px;
+    background: var(--sec);
+}
+#qr-generator .qr-format-copy { display: flex; flex-direction: column; gap: 3px; flex: 1 1 220px; }
+#qr-generator .qr-format-copy strong { color: var(--hd); }
+#qr-generator .qr-format-copy small { color: var(--mut); font-size: .84rem; }
+#qr-generator .qr-format-choice { display: flex; flex-direction: column; gap: 4px; flex: 1 1 180px; font-size: .85rem; font-weight: 600; }
+#qr-generator .qr-format-choice select { width: 100%; min-height: 44px; padding: 9px 12px; border: 1px solid var(--bd); border-radius: 10px; background: var(--card); color: var(--tx); font: inherit; }
+#qr-generator .qr-format-bar button { flex: 0 1 auto; }
+@media (max-width: 600px) {
+    #qr-generator .qr-format-bar { align-items: stretch; padding: 13px; }
+    #qr-generator .qr-format-copy, #qr-generator .qr-format-choice, #qr-generator .qr-format-bar button { flex: 1 1 100%; width: 100%; }
+}
+

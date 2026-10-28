@@ -641,3 +641,316 @@ if ('IntersectionObserver' in window) {
     ['inicio', 'como', 'mais', 'sobre'].forEach(i => io.observe(E(i)))
 }
 mark();
+
+/* ----- Gerador de QR Code: módulo isolado, sem modificar a lógica ABNT/conversor ----- */
+(() => {
+    const input = document.getElementById('qrLink');
+    const generateBtn = document.getElementById('qrGenerate');
+    const downloadBtn = document.getElementById('qrDownload');
+    const status = document.getElementById('qrStatus');
+    const result = document.getElementById('qrResult');
+    const canvasHost = document.getElementById('qrCanvas');
+    const valueLabel = document.getElementById('qrValue');
+    if (!input || !generateBtn || !downloadBtn || !status || !result || !canvasHost || !valueLabel) return;
+
+    let currentLink = '';
+    const setStatus = (message) => { status.textContent = message; };
+
+    generateBtn.addEventListener('click', () => {
+        const raw = input.value.trim();
+        if (!raw) { setStatus('Digite um link antes de gerar o QR Code.'); input.focus(); return; }
+
+        let parsed;
+        try { parsed = new URL(raw); }
+        catch (_) { setStatus('Esse link parece inválido. Informe um endereço completo, como https://exemplo.com.'); input.focus(); return; }
+        if (!['http:', 'https:'].includes(parsed.protocol)) {
+            setStatus('Por segurança, use um link que comece com http:// ou https://.');
+            input.focus();
+            return;
+        }
+        if (typeof window.QRCode !== 'function') {
+            setStatus('A biblioteca de QR Code não carregou. Confira sua conexão com a internet e recarregue a página.');
+            return;
+        }
+
+        canvasHost.textContent = '';
+        try {
+            new window.QRCode(canvasHost, { text: parsed.href, width: 256, height: 256, colorDark: '#000000', colorLight: '#ffffff', correctLevel: window.QRCode.CorrectLevel.H });
+            currentLink = parsed.href;
+            valueLabel.textContent = currentLink;
+            result.hidden = false;
+            downloadBtn.disabled = false;
+            setStatus('QR Code gerado! Você já pode baixar a imagem PNG.');
+        } catch (error) {
+            console.error('Erro ao gerar QR Code:', error);
+            currentLink = '';
+            downloadBtn.disabled = true;
+            setStatus('Não foi possível gerar o QR Code para esse link. Confira o endereço e tente novamente.');
+        }
+    });
+
+    downloadBtn.addEventListener('click', () => {
+        if (!currentLink) { setStatus('Gere um QR Code antes de baixar.'); return; }
+        const canvas = canvasHost.querySelector('canvas');
+        const image = canvasHost.querySelector('img');
+        let dataUrl = '';
+        if (canvas) dataUrl = canvas.toDataURL('image/png');
+        else if (image && image.src) dataUrl = image.src;
+        if (!dataUrl || !dataUrl.startsWith('data:image/')) {
+            setStatus('A imagem ainda não está pronta. Gere o QR Code novamente em alguns instantes.');
+            return;
+        }
+        const anchor = document.createElement('a');
+        anchor.href = dataUrl;
+        anchor.download = 'qrcode-me-formata.png';
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        setStatus('Download do QR Code iniciado.');
+    });
+})();
+
+
+/* ===== ME-FORMATA: GERADOR DE QR CODE E EXPORTAÇÃO ===== */
+(function () {
+    const input = document.getElementById("qrLink");
+    const gerar = document.getElementById("qrGenerate");
+    const baixar = document.getElementById("qrDownload");
+    const area = document.getElementById("qrCanvas");
+    const status = document.getElementById("qrStatus");
+
+    if (!input || !gerar || !baixar || !area) {
+        console.warn("Elementos do gerador de QR Code não encontrados.");
+        return;
+    }
+
+    let linkAtual = "";
+    let qrPronto = false;
+
+    // Cria os controles de exportação sem substituir os existentes.
+    const controles = document.createElement("div");
+    controles.id = "qrExportControls";
+    controles.style.cssText =
+        "display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;";
+
+    const formato = document.createElement("select");
+    formato.id = "qrExportFormat";
+    formato.setAttribute("aria-label", "Formato para baixar o QR Code");
+    formato.style.cssText =
+        "padding:10px;border-radius:10px;border:1px solid #ccc;";
+
+    [
+        ["png", "PNG — imagem"],
+        ["jpg", "JPG — imagem"],
+        ["pdf", "PDF — documento"],
+        ["svg", "SVG — vetorial"]
+    ].forEach(function (item) {
+        const opcao = document.createElement("option");
+        opcao.value = item[0];
+        opcao.textContent = item[1];
+        formato.appendChild(opcao);
+    });
+
+    const exportar = document.createElement("button");
+    exportar.type = "button";
+    exportar.textContent = "Baixar no formato escolhido";
+    exportar.className = "pri";
+
+    controles.append(formato, exportar);
+    baixar.insertAdjacentElement("afterend", controles);
+    baixar.hidden = true;
+
+    function informar(mensagem) {
+        if (status) status.textContent = mensagem;
+    }
+
+    function baixarArquivo(nome, conteudo, tipo) {
+        const url = URL.createObjectURL(
+            new Blob([conteudo], { type: tipo })
+        );
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = nome;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
+    }
+
+    function obterCanvas() {
+        return area.querySelector("canvas");
+    }
+
+    function obterImagem() {
+        const canvas = obterCanvas();
+
+        if (canvas) return canvas.toDataURL("image/png");
+
+        const imagem = area.querySelector("img");
+        return imagem && imagem.complete ? imagem.src : null;
+    }
+
+    gerar.addEventListener("click", function () {
+        const texto = input.value.trim();
+
+        if (!texto) {
+            informar("Digite um link antes de gerar o QR Code.");
+            input.focus();
+            return;
+        }
+
+        let link;
+
+        try {
+            link = new URL(texto);
+
+            if (!["http:", "https:"].includes(link.protocol)) {
+                throw new Error("Protocolo inválido");
+            }
+        } catch {
+            informar("Digite um link válido, começando com https:// ou http://.");
+            return;
+        }
+
+        if (typeof window.QRCode !== "function") {
+            informar("A biblioteca QR Code não carregou. Verifique a conexão.");
+            return;
+        }
+
+        area.replaceChildren();
+        qrPronto = false;
+        linkAtual = link.href;
+
+        try {
+            new window.QRCode(area, {
+                text: linkAtual,
+                width: 280,
+                height: 280,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: window.QRCode.CorrectLevel.H
+            });
+
+            informar("QR Code gerado! Escolha o formato para baixar.");
+
+            // Aguarda a biblioteca desenhar a imagem.
+            setTimeout(function () {
+                qrPronto = !!obterCanvas() || !!obterImagem();
+
+                if (!qrPronto) {
+                    informar("Não foi possível preparar a imagem. Tente novamente.");
+                }
+            }, 300);
+        } catch (erro) {
+            console.error(erro);
+            informar("Erro ao gerar o QR Code. Confira o link e tente novamente.");
+        }
+    });
+
+    exportar.addEventListener("click", async function () {
+        if (!linkAtual) {
+            informar("Gere um QR Code antes de baixar.");
+            return;
+        }
+
+        const formatoEscolhido = formato.value;
+
+        try {
+            if (formatoEscolhido === "svg") {
+                if (typeof window.qrcode !== "function") {
+                    informar("Para exportar SVG, adicione a biblioteca qrcode-generator no HTML.");
+                    return;
+                }
+
+                const qr = window.qrcode(0, "H");
+                qr.addData(linkAtual);
+                qr.make();
+
+                const svg = qr.createSvgTag({
+                    cellSize: 8,
+                    margin: 4,
+                    scalable: true
+                });
+
+                baixarArquivo("qrcode-me-formata.svg", svg, "image/svg+xml");
+                informar("Download SVG iniciado.");
+                return;
+            }
+
+            const imagem = obterImagem();
+
+            if (!imagem) {
+                informar("Aguarde a geração do QR Code e tente novamente.");
+                return;
+            }
+
+            const img = new Image();
+
+            img.onload = async function () {
+                const canvas = document.createElement("canvas");
+                const margem = 24;
+                canvas.width = img.width + margem * 2;
+                canvas.height = img.height + margem * 2;
+
+                const contexto = canvas.getContext("2d");
+                contexto.fillStyle = "#ffffff";
+                contexto.fillRect(0, 0, canvas.width, canvas.height);
+                contexto.drawImage(img, margem, margem);
+
+                if (formatoEscolhido === "png") {
+                    baixarArquivo(
+                        "qrcode-me-formata.png",
+                        await (await fetch(canvas.toDataURL("image/png"))).blob(),
+                        "image/png"
+                    );
+                    informar("Download PNG iniciado.");
+                } else if (formatoEscolhido === "jpg") {
+                    const jpg = canvas.toDataURL("image/jpeg", 0.95);
+                    baixarArquivo(
+                        "qrcode-me-formata.jpg",
+                        await (await fetch(jpg)).blob(),
+                        "image/jpeg"
+                    );
+                    informar("Download JPG iniciado.");
+                } else if (formatoEscolhido === "pdf") {
+                    if (!window.jspdf || !window.jspdf.jsPDF) {
+                        informar("Para exportar PDF, adicione a biblioteca jsPDF no HTML.");
+                        return;
+                    }
+
+                    const pdf = new window.jspdf.jsPDF({
+                        orientation: "portrait",
+                        unit: "mm",
+                        format: "a4"
+                    });
+
+                    const tamanho = 100;
+                    pdf.addImage(
+                        canvas.toDataURL("image/png"),
+                        "PNG",
+                        (210 - tamanho) / 2,
+                        60,
+                        tamanho,
+                        tamanho
+                    );
+
+                    pdf.save("qrcode-me-formata.pdf");
+                    informar("Download PDF iniciado.");
+                }
+            };
+
+            img.onerror = function () {
+                informar("Não foi possível preparar o arquivo para download.");
+            };
+
+            img.src = imagem;
+        } catch (erro) {
+            console.error(erro);
+            informar("Falha ao exportar. Tente novamente.");
+        }
+    });
+
+    informar("Digite um link para começar.");
+})();
