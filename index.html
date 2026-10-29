@@ -4,9 +4,9 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>Me-Formata · Documentos sem complicação</title>
+    <title>Me-Formata - Documentos sem complicação</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Playfair+Display:wght@700&display=swap">
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -14,6 +14,8 @@
     <input class="tab" type="radio" name="tab" id="t0" checked aria-label="Início">
     <input class="tab" type="radio" name="tab" id="t1" aria-label="Conversor">
     <input class="tab" type="radio" name="tab" id="t2" aria-label="ABNT">
+    <input class="tab" type="radio" name="tab" id="t3" aria-label="QR Code">
+
     <svg width="0" height="0" style="position:absolute" aria-hidden="true">
         <defs>
             <symbol id="doc" viewBox="0 0 24 24">
@@ -33,7 +35,7 @@
             </symbol>
             <symbol id="ok" viewBox="0 0 24 24">
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                <path d="M22 4L12 14l-3-3" />
+                <path d="M22 4L12 14.01l-3-3" />
             </symbol>
             <symbol id="up" viewBox="0 0 24 24">
                 <path d="M16 16l-4-4-4 4M12 12v9" />
@@ -68,51 +70,67 @@
             </symbol>
         </defs>
     </svg>
-    <header class="top"><a class="logo" href="#" data-tab="t0"><b>Me-Formata</b><small>Documentos sem
-                complicação</small></a>
-        <nav aria-label="Principal"><label for="t0" data-nav="t0">Início</label><label for="t2" data-nav="t2">Formatar
-                ABNT</label><label for="t1" data-nav="t1">Converter arquivos</label><a href="#" data-tab="t0" data-go="qr-generator" data-nav="qr-generator">Gerar QR Code</a><a href="#" data-tab="t0"
-                data-go="como" data-nav="como">Como utilizar</a><a href="#" data-tab="t0" data-go="sobre"
-                data-nav="sobre">Sobre</a></nav>
+
+    <header class="top">
+        <a class="logo" href="#" data-tab="t0"><b>Me-Formata</b><small>Documentos sem complicação</small></a>
+        <nav aria-label="Principal">
+            <label for="t0" data-nav="t0">Início</label>
+            <label for="t2" data-nav="t2">Formatar ABNT</label>
+            <label for="t1" data-nav="t1">Converter arquivos</label>
+            <label for="t3" data-nav="t3">Gerar QR Code</label>
+            <a href="#" data-tab="t0" data-go="como" data-nav="como">Como utilizar</a>
+            <a href="#" data-tab="t0" data-go="sobre" data-nav="sobre">Sobre</a>
+        </nav>
         <a class="enter" href="#" data-tab="t2">Entrar</a>
     </header>
+
     <main>
         <section class="hero" id="inicio">
             <div class="in">
-                <div><span class="badge">Sua nova ferramenta de documentos</span>
+                <div>
+                    <span class="badge">Sua nova ferramenta de documentos</span>
                     <h1>Importou, formatou, entregou!</h1>
                     <p>Transforme seus arquivos e organize seus trabalhos acadêmicos de forma simples, rápida e prática.
                     </p>
                     <div class="cta">
-                        <a href="#" data-tab="t2"><span class="ic"><svg class="i" aria-hidden="true">
+                        <a href="#" data-tab="t2">
+                            <span class="ic"><svg class="i" aria-hidden="true">
                                     <use href="#doc" />
-                                </svg></span><span><b>Formatar nas normas ABNT</b><small>Organize seu trabalho
-                                    acadêmico.</small></span><svg class="i" aria-hidden="true">
+                                </svg></span>
+                            <span><b>Formatar nas normas ABNT</b><small>Organize seu trabalho acadêmico.</small></span>
+                            <svg class="i" aria-hidden="true">
                                 <use href="#arr" />
-                            </svg></a>
-                        <a href="#" data-tab="t1" data-to="toPng"><span class="ic"><svg class="i" aria-hidden="true">
+                            </svg>
+                        </a>
+                        <a href="#" data-tab="t1" data-to="toPng">
+                            <span class="ic"><svg class="i" aria-hidden="true">
                                     <use href="#img" />
-                                </svg></span><span><b>Converter PDF para PNG</b><small>Transforme páginas em
-                                    imagens.</small></span><svg class="i" aria-hidden="true">
+                                </svg></span>
+                            <span><b>Converter PDF para PNG</b><small>Transforme páginas em imagens.</small></span>
+                            <svg class="i" aria-hidden="true">
                                 <use href="#arr" />
-                            </svg></a>
+                            </svg>
+                        </a>
                     </div>
-                    <div class="trust"><span><svg class="i" aria-hidden="true">
+                    <div class="trust">
+                        <span><svg class="i" aria-hidden="true">
                                 <use href="#shield" />
-                            </svg>Seguro</span><span><svg class="i" aria-hidden="true">
+                            </svg>Seguro</span>
+                        <span><svg class="i" aria-hidden="true">
                                 <use href="#bolt" />
-                            </svg>Rápido</span><span><svg class="i" aria-hidden="true">
+                            </svg>Rápido</span>
+                        <span><svg class="i" aria-hidden="true">
                                 <use href="#ok" />
-                            </svg>Fácil de usar</span></div>
+                            </svg>Fácil de usar</span>
+                    </div>
                 </div>
-                <svg class="art" viewBox="0 0 380 300" role="img"
-                    aria-label="Documento ABNT e imagem, convertendo PDF em PNG">
+                <svg class="art" viewBox="0 0 380 300" role="img" aria-label="Documento ABNT e PDF em PNG">
                     <path d="M60 90c10-60 120-80 190-40s90 110 40 160-170 60-210 10S50 150 60 90z" fill="#1d5fd0"
                         opacity=".55" />
                     <g transform="rotate(-8 170 130)">
-                        <rect x="90" y="40" width="150" height="190" rx="8" fill="#f4f8ff" /><text x="165" y="85"
-                            text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="30"
-                            fill="#1b3f86">ABNT</text>
+                        <rect x="90" y="40" width="150" height="190" rx="8" fill="#f4f8ff" />
+                        <text x="165" y="85" text-anchor="middle" font-family="Georgia,serif" font-weight="700"
+                            font-size="30" fill="#1b3f86">ABNT</text>
                         <g stroke="#5b8fdc" stroke-width="6" stroke-linecap="round">
                             <path d="M112 110h110M112 130h90M112 150h110M112 170h80" />
                         </g>
@@ -124,9 +142,9 @@
                         <path d="M222 233l24-24 16 14 12-10 24 20z" fill="#0e3d91" />
                     </g>
                     <g transform="rotate(-8 280 262)">
-                        <rect x="225" y="245" width="125" height="36" rx="8" fill="#2f80ed" /><text x="287" y="269"
-                            text-anchor="middle" font-family="system-ui,sans-serif" font-weight="700" font-size="16"
-                            fill="#fff">PDF → PNG</text>
+                        <rect x="225" y="245" width="125" height="36" rx="8" fill="#2f80ed" />
+                        <text x="287" y="269" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="700"
+                            font-size="16" fill="#fff">PDF → PNG</text>
                     </g>
                 </svg>
             </div>
@@ -137,28 +155,32 @@
                 <h2>Como utilizar</h2>
                 <p class="lead">Em poucos passos, seu arquivo pronto do jeito que você precisa.</p>
                 <div class="steps">
-                    <div class="step"><span class="ic"><span class="n">1</span><svg class="i" aria-hidden="true">
+                    <div class="step">
+                        <span class="ic"><span class="n">1</span><svg class="i" aria-hidden="true">
                                 <use href="#up" />
                             </svg></span>
                         <h3>Envie seu arquivo</h3>
                         <p>Faça o upload do seu documento ou imagem.</p>
                     </div>
-                    <div class="step"><span class="ic"><span class="n">2</span><svg class="i" aria-hidden="true">
+                    <div class="step">
+                        <span class="ic"><span class="n">2</span><svg class="i" aria-hidden="true">
                                 <use href="#grid" />
                             </svg></span>
                         <h3>Escolha a ferramenta</h3>
                         <p>Selecione o que você precisa: ABNT, conversão ou outra opção.</p>
                     </div>
-                    <div class="step"><span class="ic"><span class="n">3</span><svg class="i" aria-hidden="true">
+                    <div class="step">
+                        <span class="ic"><span class="n">3</span><svg class="i" aria-hidden="true">
                                 <use href="#down" />
                             </svg></span>
                         <h3>Baixe o resultado</h3>
                         <p>Pronto! Seu arquivo já está formatado ou convertido.</p>
                     </div>
                 </div>
-                <div class="row" style="justify-content:center;margin-top:28px"><a class="enter" href="#"
-                        data-tab="t2">Formatar em ABNT</a><a class="enter alt2" href="#" data-tab="t1">Converter
-                        arquivos</a></div>
+                <div class="row" style="justify-content:center;margin-top:28px">
+                    <a class="enter" href="#" data-tab="t2">Formatar em ABNT</a>
+                    <a class="enter alt2" href="#" data-tab="t1">Converter arquivos</a>
+                </div>
             </div>
         </section>
 
@@ -167,45 +189,63 @@
                 <h2>Mais ferramentas para você</h2>
                 <p class="lead">Tudo o que você precisa, em um só lugar.</p>
                 <div class="tools">
-                    <div class="tl soon" aria-disabled="true"><span class="ic"><svg class="i" aria-hidden="true">
+                    <div class="tl soon" aria-disabled="true">
+                        <span class="ic"><svg class="i" aria-hidden="true">
                                 <use href="#doc" />
-                            </svg></span><span><b>PDF para Word</b><small>Deixe seu documento
-                                editável.</small></span><em>Em breve</em></div>
-                    <a class="tl" href="#" data-tab="t1" data-to="toPdf"><span class="ic"><svg class="i"
-                                aria-hidden="true">
+                            </svg></span>
+                        <span><b>PDF para Word</b><small>Deixe seu documento editável.</small></span>
+                        <em>Em breve</em>
+                    </div>
+                    <a class="tl" href="#" data-tab="t1" data-to="toPdf">
+                        <span class="ic"><svg class="i" aria-hidden="true">
                                 <use href="#img" />
-                            </svg></span><span><b>Imagens para PDF</b><small>Junte suas imagens em um só
-                                arquivo.</small></span><span class="go"><svg class="i" aria-hidden="true">
+                            </svg></span>
+                        <span><b>Imagens para PDF</b><small>Junte suas imagens em um só arquivo.</small></span>
+                        <span class="go"><svg class="i" aria-hidden="true">
                                 <use href="#arr" />
-                            </svg></span></a>
-                    <div class="tl soon" aria-disabled="true"><span class="ic"><svg class="i" aria-hidden="true">
+                            </svg></span>
+                    </a>
+                    <div class="tl soon" aria-disabled="true">
+                        <span class="ic"><svg class="i" aria-hidden="true">
                                 <use href="#type" />
-                            </svg></span><span><b>Contador de palavras</b><small>Saiba quantas palavras tem seu
-                                texto.</small></span><em>Em breve</em></div>
-                    <div class="tl soon" aria-disabled="true"><span class="ic"><svg class="i" aria-hidden="true">
+                            </svg></span>
+                        <span><b>Contador de palavras</b><small>Saiba quantas palavras tem seu texto.</small></span>
+                        <em>Em breve</em>
+                    </div>
+                    <div class="tl soon" aria-disabled="true">
+                        <span class="ic"><svg class="i" aria-hidden="true">
                                 <use href="#book" />
-                            </svg></span><span><b>Gerador de referências</b><small>Monte suas referências no padrão
-                                ABNT.</small></span><em>Em breve</em></div>
-                    <div class="tl soon" aria-disabled="true"><span class="ic"><svg class="i" aria-hidden="true">
+                            </svg></span>
+                        <span><b>Gerador de referências</b><small>Monte suas referências no padrão ABNT.</small></span>
+                        <em>Em breve</em>
+                    </div>
+                    <div class="tl soon" aria-disabled="true">
+                        <span class="ic"><svg class="i" aria-hidden="true">
                                 <use href="#mini" />
-                            </svg></span><span><b>Compressor de PDF</b><small>Reduza o tamanho do seu
-                                arquivo.</small></span><em>Em breve</em></div>
-                    <a class="tl" href="#" data-tab="t1"><span class="ic"><svg class="i" aria-hidden="true">
+                            </svg></span>
+                        <span><b>Compressor de PDF</b><small>Reduza o tamanho do seu arquivo.</small></span>
+                        <em>Em breve</em>
+                    </div>
+                    <a class="tl" href="#" data-tab="t1">
+                        <span class="ic"><svg class="i" aria-hidden="true">
                                 <use href="#sync" />
-                            </svg></span><span><b>Outras conversões</b><small>PNG, JPG e PDF em qualquer
-                                direção.</small></span><span class="go"><svg class="i" aria-hidden="true">
+                            </svg></span>
+                        <span><b>Outras conversões</b><small>PNG, JPG e PDF em qualquer direção.</small></span>
+                        <span class="go"><svg class="i" aria-hidden="true">
                                 <use href="#arr" />
-                            </svg></span></a>
+                            </svg></span>
+                    </a>
                 </div>
             </div>
         </section>
+
         <section class="sec" id="sobre">
             <div class="in narrow">
                 <h2>Sobre o Me-Formata</h2>
                 <p class="lead">Uma ferramenta simples para organizar trabalhos acadêmicos e converter arquivos, sem
                     instalar nada.</p>
                 <ul class="abt">
-                    <li><b>Formatar ABNT</b>Cole ou importe um texto (.txt, .docx ou .pdf), ajuste o tipo de trabalho e
+                    <li><b>Formatar ABNT</b>Cole ou importe um texto de trabalho (.txt, .docx ou .pdf), ajuste o tipo e
                         baixe em DOCX editável ou PDF. Margens, fonte, espaçamento, recuo, títulos, citações longas e
                         referências são tratados.</li>
                     <li><b>Converter arquivos</b>PDF, PNG e JPG em qualquer direção, com envio por WhatsApp, e-mail,
@@ -217,45 +257,8 @@
                 </ul>
             </div>
         </section>
-        <!-- NOVA FERRAMENTA: GERADOR DE QR CODE (adicionada sem alterar as ferramentas existentes) -->
-        <section class="sec" id="qr-generator">
-            <div class="in">
-                <div class="qr-intro">
-                    <span class="badge">Ferramenta gratuita</span>
-                    <h2>Gere um QR Code a partir de um link</h2>
-                    <p>Insira um endereço da web, gere o código e baixe a imagem para compartilhar.</p>
-                </div>
-                <div class="card qr-card">
-                    <label class="l" for="qrLink">Link que deseja transformar em QR Code</label>
-                    <input class="t" id="qrLink" type="url" placeholder="https://exemplo.com" autocomplete="url" inputmode="url">
-                    <div class="row qr-actions">
-                        <button class="pri" type="button" id="qrGenerate">Gerar QR Code</button>
-                    </div>
-                    <div class="qr-format-bar" aria-label="Opções de exportação do QR Code">
-                        <div class="qr-format-copy">
-                            <strong>Baixar QR Code</strong>
-                            <small>Escolha o formato ideal para compartilhar ou imprimir.</small>
-                        </div>
-                        <label class="qr-format-choice" for="qrFormat">
-                            <span>Formato</span>
-                            <select id="qrFormat" disabled>
-                                <option value="png">PNG — imagem</option>
-                                <option value="jpg">JPG — imagem compacta</option>
-                                <option value="pdf">PDF — impressão</option>
-                                <option value="svg">SVG — vetor</option>
-                            </select>
-                        </label>
-                        <button class="pri" type="button" id="qrDownload" disabled>⬇ Baixar arquivo</button>
-                    </div>
-                    <p class="hint" id="qrStatus" role="status" aria-live="polite">O QR Code será exibido aqui depois da geração.</p>
-                    <div id="qrResult" class="qr-result" hidden>
-                        <div id="qrCanvas" class="qr-canvas" aria-label="QR Code gerado"></div>
-                        <p class="qr-value" id="qrValue"></p>
-                    </div>
-                </div>
-            </div>
-        </section>
     </main>
+
     <div class="wrap">
         <div class="ph" id="ph1">
             <h2 class="ft-t">Converter arquivos</h2>
@@ -273,28 +276,33 @@
                 <li>Exportação</li>
             </ol>
         </div>
+        <div class="ph" id="ph3">
+            <h2 class="ft-t">Gerador de QR Code</h2>
+            <p class="sub">Gere um QR Code a partir de qualquer link e baixe nos formatos PNG, JPG, PDF ou SVG.</p>
+        </div>
+
         <!-- PÁGINA 1: CONVERSOR -->
         <section class="page" id="p1">
             <div class="card">
-                <label class="drop" for="f1">① Toque para escolher arquivos<small>PDF, PNG ou JPG · pode escolher
-                        vários</small>
-                    <input id="f1" type="file" accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+                <label class="drop" for="f1">Toque para escolher arquivos<small>PDF, PNG ou JPG (pode escolher
+                        vários)</small>
+                    <input id="f1" type="file" accept=".pdf, .png, .jpg, .jpeg, application/pdf, image/png, image/jpeg"
                         multiple></label>
                 <p class="hint" id="sel" aria-live="polite" style="margin:10px 0 0">Nenhum arquivo selecionado.</p>
-                <label class="l">② Converter para</label>
+                <label class="l">Converter para</label>
                 <div class="pills">
                     <input type="radio" name="to" id="toPng" value="png" checked><label for="toPng">PNG</label>
                     <input type="radio" name="to" id="toJpg" value="jpg"><label for="toJpg">JPG</label>
                     <input type="radio" name="to" id="toPdf" value="pdf"><label for="toPdf">PDF</label>
                 </div>
-                <div class="row"><button class="pri" id="go" disabled>③ Converter</button></div>
+                <div class="row"><button class="pri" id="go" disabled>Converter</button></div>
                 <p class="hint">PDF → PNG/JPG gera uma imagem por página. Várias imagens → PDF juntam tudo em um único
                     PDF.</p>
             </div>
             <div class="card" id="res" hidden>
                 <strong>Prontos para enviar</strong>
                 <div id="list"></div>
-                <div class="row"><button class="pri" id="shAll">📤 Compartilhar (WhatsApp, e-mail, Instagram…)</button>
+                <div class="row"><button class="pri" id="shAll">Compartilhar (WhatsApp, e-mail, Instagram...)</button>
                 </div>
                 <p class="hint">O botão abre o menu do seu aparelho com WhatsApp, Gmail, Outlook, Instagram e outros
                     apps. Se o seu navegador não tiver esse menu, o arquivo é baixado para você anexar.</p>
@@ -308,10 +316,11 @@
                 <label class="drop" for="f2" style="margin-top:10px">Importar arquivo<small>.txt, .docx ou
                         .pdf</small><input id="f2" type="file"
                         accept=".txt,.docx,.pdf,text/plain,application/pdf"></label>
-                <label class="l" for="txt">…ou cole seu texto aqui (original)</label>
+                <label class="l" for="txt">...ou cole seu texto aqui (original)</label>
                 <textarea id="txt" placeholder="Cole o texto como está, mesmo desorganizado."></textarea>
-                <div class="row"><button id="clr">🗑️ Limpar</button></div>
+                <div class="row"><button id="clr">Limpar</button></div>
             </div>
+
             <div class="card">
                 <strong>2. Tipo de documento e configurações</strong>
                 <div class="g2">
@@ -345,47 +354,95 @@
                         <div><label class="l" for="ano">Ano</label><input class="t" id="ano" inputmode="numeric"></div>
                     </div>
                 </details>
-                <div class="row"><button class="pri" id="anBtn">Analisar documento</button><button class="pri"
-                        id="fmtBtn" disabled>Aplicar correções seguras</button></div>
+                <div class="row">
+                    <button class="pri" id="anBtn">Analisar documento</button>
+                    <button class="pri" id="fmtBtn" disabled>Aplicar correções seguras</button>
+                </div>
                 <p class="hint">Primeiro o sistema analisa e mostra o relatório. Nada é alterado até você aplicar as
                     correções, e as palavras do seu texto são sempre mantidas.</p>
             </div>
+
             <div class="card">
                 <div><progress id="prog" max="100" value="0" hidden style="width:100%"></progress><span id="pm"
                         class="hint"></span></div>
                 <div class="cmpwrap">
-                    <div class="pills" style="margin-top:8px"><input type="radio" name="vw" id="vwC" checked><label
-                            for="vwC">Documento corrigido</label><input type="radio" name="vw" id="vwO"><label
-                            for="vwO">Texto original</label></div>
+                    <div class="pills" style="margin-top:8px">
+                        <input type="radio" name="vw" id="vwC" checked><label for="vwC">Documento corrigido</label>
+                        <input type="radio" name="vw" id="vwO"><label for="vwO">Texto original</label>
+                    </div>
                     <div class="paper-box" id="vc" style="margin-top:8px">
                         <div class="paper" id="paper"></div>
                     </div>
                     <div id="orig" class="orig" aria-label="Texto original com os trechos assinalados"></div>
                 </div>
-                <div class="row">
-                    <button class="pri" id="dx">⬇️ DOCX</button><button class="pri" id="dl">⬇️ PDF</button>
-                    <button id="cp">📋 Copiar</button><button id="pr">🖨️ Imprimir</button>
-                    <button id="shr">📤 Compartilhar PDF</button><button id="mail">✉️ E-mail</button><button id="wa">💬
-                        WhatsApp</button>
+
+                <div class="card" id="export-card"
+                    style="margin-top: 14px; border:none; padding:0; background:transparent;">
+                    <div class="row" style="display:flex; flex-direction:column; gap:8px; width:100%;">
+                        <button class="pri" id="dx" style="width:100%;">Baixar DOCX</button>
+                        <button class="pri" id="dl" style="width:100%;">Baixar PDF</button>
+                        <button id="cp" style="width:100%;">Copiar Texto</button>
+                        <button id="pr" style="width:100%;">Imprimir</button>
+                        <button id="shr" style="width:100%;">Compartilhar PDF</button>
+                        <button id="mail" style="width:100%;">Enviar por E-mail</button>
+                        <button id="wa" style="width:100%;">Enviar por WhatsApp</button>
+                    </div>
                 </div>
-                <details>
-                    <summary>✏️ Editar o texto formatado</summary>
+
+                <details style="margin-top: 12px;">
+                    <summary>Editar o texto formatado</summary>
                     <textarea id="out"
                         placeholder="O texto formatado aparece aqui depois de clicar em Formatar."></textarea>
-                    <p class="hint"># título de seção · ## subseção · ### 3º nível · - ou 1. para listas · &gt; citação
-                        longa (mais de 3 linhas). A prévia e os arquivos usam este texto.</p>
+                    <p class="hint"># título de seção ## subseção ### 3° nível • ou 1. para listas > citação longa (mais
+                        de 3 linhas). A prévia e os arquivos usam este texto.</p>
                 </details>
             </div>
         </section>
+
+        <!-- PÁGINA 3: GERADOR DE QR CODE -->
+        <section class="page" id="p3">
+            <div class="card qr-card">
+                <label class="l" for="qrLink">Link que deseja transformar em QR Code</label>
+                <input class="t" id="qrLink" type="url" placeholder="https://exemplo.com" autocomplete="url"
+                    inputmode="url">
+                <div class="row qr-actions">
+                    <button class="pri" type="button" id="qrGenerate">Gerar QR Code</button>
+                </div>
+                <div class="qr-format-bar" aria-label="Opções de exportação do QR Code">
+                    <div class="qr-format-copy">
+                        <strong>Baixar QR Code</strong>
+                        <small>Escolha o formato ideal para compartilhar ou imprimir.</small>
+                    </div>
+                    <label class="qr-format-choice" for="qrFormat">
+                        <span>Formato</span>
+                        <select id="qrFormat" disabled>
+                            <option value="png">PNG imagem</option>
+                            <option value="jpg">JPG imagem compacta</option>
+                            <option value="pdf">PDF impressão</option>
+                            <option value="svg">SVG vetor</option>
+                        </select>
+                    </label>
+                    <button class="pri" type="button" id="qrDownload" disabled>Baixar arquivo</button>
+                </div>
+                <p class="hint" id="qrStatus" role="status" aria-live="polite">O QR Code será exibido aqui depois da
+                    geração.</p>
+                <div id="qrResult" class="qr-result" hidden>
+                    <div id="qrCanvas" class="qr-canvas" aria-label="QR Code gerado"></div>
+                    <p class="qr-value" id="qrValue"></p>
+                </div>
+            </div>
+        </section>
     </div>
+
     <footer class="ft">
-        <div class="in fi"><a class="logo" href="#" data-tab="t0"><b>Me-Formata</b><small>Documentos sem
-                    complicação</small></a>
+        <div class="in fi">
+            <a class="logo" href="#" data-tab="t0"><b>Me-Formata</b><small>Documentos sem complicação</small></a>
             <div class="fx"><strong>Seu tempo é valioso.</strong><br>Deixe a formatação e as conversões com a gente. O
                 Me-Formata funciona no seu navegador: seus arquivos não são enviados a servidores.</div>
             <a class="enter" href="#" data-tab="t2">Comece agora</a>
         </div>
     </footer>
+
     <div id="toast" role="status" aria-live="polite"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
