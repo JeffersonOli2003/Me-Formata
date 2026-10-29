@@ -1,6 +1,7 @@
 const $ = s => document.querySelector(s);
 function toast(m) {
     const t = $('#toast');
+    if (!t) return;
     t.textContent = m;
     t.classList.add('on');
     clearTimeout(toast.i);
@@ -49,15 +50,16 @@ const rd = f => new Promise((ok, er) => { const r = new FileReader(); r.onload =
 const img = s => new Promise((ok, er) => { const i = new Image(); i.onload = () => ok(i); i.onerror = er; i.src = s; });
 const cv = (w, h, fill) => {
     const c = document.createElement('canvas');
-    c.width = w;
-    c.height = h;
+    c.width = w; c.height = h;
     const x = c.getContext('2d');
     if (fill) { x.fillStyle = '#fff'; x.fillRect(0, 0, w, h); }
     return c;
 };
 const blob = (c, t) => new Promise(r => c.toBlob(r, t === 'jpg' ? 'image/jpeg' : 'image/png', .92));
 const base = n => n.replace(/\.[^.]+$/, "");
-const setWorker = () => { pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; };
+const setWorker = () => {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+};
 
 async function pages(f) {
     if (/pdf/i.test(f.type) || /\.pdf$/i.test(f.name)) {
@@ -79,8 +81,7 @@ const goBtn = $('#go');
 if (goBtn) {
     goBtn.onclick = async () => {
         const to = document.querySelector('input[name=to]:checked').value, b = $('#go');
-        b.disabled = true;
-        b.textContent = 'Convertendo...';
+        b.disabled = true; b.textContent = 'Convertendo...';
         out = [];
         try {
             if (to === 'pdf') {
@@ -104,8 +105,7 @@ if (goBtn) {
             toast('Não consegui converter este arquivo. Tente outro.');
             console.error(e);
         }
-        b.disabled = false;
-        b.textContent = 'Converter';
+        b.disabled = false; b.textContent = 'Converter';
     };
 }
 
@@ -118,20 +118,17 @@ function showConv() {
         d.className = 'file';
         if (o.blob.type.startsWith('image/')) {
             const m = document.createElement('img');
-            m.alt = "";
-            m.src = URL.createObjectURL(o.blob);
+            m.alt = ""; m.src = URL.createObjectURL(o.blob);
             d.append(m);
         }
         const s = document.createElement('span');
         s.textContent = o.name;
         d.append(s);
         const a = document.createElement('button');
-        a.textContent = 'Baixar';
-        a.onclick = () => save(o.name, o.blob);
-        const b = document.createElement('button');
-        b.textContent = 'Enviar';
-        b.onclick = () => share([o]);
-        d.append(a, b);
+        a.textContent = 'Baixar'; a.onclick = () => save(o.name, o.blob);
+        const btnShare = document.createElement('button');
+        btnShare.textContent = 'Enviar'; btnShare.onclick = () => share([o]);
+        d.append(a, btnShare);
         L.append(d);
     });
     $('#res').hidden = false;
@@ -160,102 +157,105 @@ const cfg = () => ({
 const GEO = { W: 595.28, H: 841.89, L: 85.04, R: 56.69, T: 85.04, B: 56.69, IND: 35.43, QI: 113.39, LM: 21.26 };
 const strip = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, "");
 
-const NOTE_START = /^\s*[\(\[]?\s*(teste|testando|test|todo|to-do|fixme|obs|observa[cc][aa]o|nota|lembrete|rascunho|draft|coment[aa]rio|anota[cç][aa]o|apagar|deletar|ver depois|revisar|corrigir|completar|xxx+)\s*[\)\]]?\s*(?::|[-]\s|\$)|^\s*(teste|testando)\b/i;
-const NOTE_ANY = /\b(texto de teste|apenas um teste|isto é um teste|lorem ipsum|bl[aá] bl[aá]|(?:escrever|colocar|inserir|colar|completar|adicionar)\s+(?:aqui|depois|mais))\b|^\s*\/\/|\b(?:k{3,}|rsrs+)\b/i;
-const NOTE_BRK = /^\s*\[[^\]]{3,}\]\s*$/;
-const NOTE_HEAD = /^(anota[cc][õo]es?|rascunhos?|observa[cc][õo]es?|notas?|testes?|todo|lembretes?|coment[aá]rios?)(\s.*)?$/i;
-
-function needsPunctuationReview(b) {
-    if (!b || b.t !== 'p') return false;
-    const s = String(b.s || "").trim();
-    if (!s || /[.!?:;""»…]\$/.test(s) || NOTE_START.test(s)) return false;
-    return true;
-}
-
-const KNOWN = /^(\d+(\.\d+)*\.?\s+)?(introdu[cc][aa]o|desenvolvimento|conclus[aa]o|conclus[õo]es|considera[cç][õo]es finais|refer[ee]ncias( bibliogr[aa]ficas)?|resumo|abstract|metodologia|revis[aa]o (de|da) literatura|fundamenta[cc][aa]o te[óo]rica|resultados( e discuss[aa]o)?|discuss[aa]o|objetivos?|justificativa|agradecimentos|ap[ee]ndices?|anexos?|material e m[ée]todos)$/i;
-const UNNUM = /^(resumo|abstract|resumen|refer[ee]ncias|agradecimentos|ap[êe]ndices?|anexos?|gloss[aa]rio|sum[aa]rio|ep[ii]grafe|dedicat[óo]ria)/i;
-const LIST = /^(?:([-*•])|(\d{1,2}[.)])|([a-z]\)))\s+(\S.*)$/;
-const isCaps = s => /\p{L}/u.test(s) && s === s.toUpperCase() && s.toLowerCase() !== s && s.length >= 4;
-
-let LVFIX = 0, LASTFIX = 0, CHG = [], LOG = [], LVLOG = [];
-
-function headOf(l, iso) {
+function headOf(l) {
     let m;
     if (/\.{3,}\s*\d+\s*$/.test(l)) return null;
-    if (m = l.match(/^(#{1,3})\s+(.+)$/)) {
-        let s = m[2].trim(), no = "", dot = false, n;
-        if (n = s.match(/^(\d+(?:\.\d+)*)(\.?)\s+(\S.*)$/)) { no = n[1]; dot = !!n[2]; s = n[3]; }
-        return { lv: m[1].length, s, no, dot };
+
+    if (m = l.match(/^#{1,3}\s+(.+)$/)) {
+        let s = m[1].trim(), no = "";
+        let n = s.match(/^(\d+(?:\.\d+)*)(\.?)\s+(.+)$/);
+        if (n) { no = n[1]; s = n[3]; }
+        return { lv: m[1].startsWith('###') ? 3 : m[1].startsWith('##') ? 2 : 1, s, no };
     }
-    if (l.length > 80 || /[.!?;,:]$/.test(l) || /^\[/.test(l)) return null;
-    if (m = l.match(/^(\d+(?:\.\d+)*)(\.?)\s+(\p{Lu}.*)$/u)) {
+
+    if (m = l.match(/^(\d+(?:\.\d+)*)\.?\s+(.+)$/)) {
         const lv = m[1].split('.').length;
-        if (lv > 1) return { lv: Math.min(lv, 3), s: m[3], no: m[1], dot: !!m[2] };
-        if (!m[2]) return { lv: 1, s: m[3], no: m[1], dot: false };
-        return (isCaps(m[3]) || KNOWN.test(m[3]) || iso) ? { lv: 1, s: m[3], no: m[1], dot: true } : null;
+        return { lv: Math.min(lv, 3), s: m[2].trim(), no: m[1] };
     }
-    if (/^\d/.test(l)) return null;
-    return (isCaps(l) || KNOWN.test(l)) ? { lv: 1, s: l, no: "", dot: false } : null;
+
+    const clean = strip(l).toLowerCase();
+    const knownHeadings = /^(introdu[cc][aa]o|conclus[aa]o|resumo|abstract|metodologia|resultados|discuss[aa]o|refer[ee]ncias|objetivos|desenvolvimento|fundamenta[cc][aa]o te[oó]rica)/i;
+    if (knownHeadings.test(clean) && l.length < 60) {
+        return { lv: 1, s: l, no: "" };
+    }
+
+    return null;
 }
 
 function parse(t) {
     const out = [];
     const lines = t.replace(/\r/g, "").split('\n');
-    let para = [], pl = 0, ref = false, inList = false, inQ = false, startedMain = false;
-    LVFIX = 0; LVLOG = [];
-    const flush = () => { if (para.length) { out.push({ t: 'p', s: para.join(' '), ln: pl, nl: para.length }); para = []; } };
+    let para = [], p1 = 0, ref = false, inSumario = false;
+
     for (let i = 0; i < lines.length; i++) {
-        const l = lines[i].replace(/[\t\u00a0]+/g, '').trim();
-        if (!l) { flush(); inList = inQ = false; continue; }
-        if (!startedMain) {
-            if (/^sum[aa]rio$/i.test(strip(l)) || /^(?:#{1,3}\s*)?(?:introdu[cc][aa]o|\b1[\s.]+introdu[cc][aa]o)/i.test(strip(l))) {
-                startedMain = true;
+        const l = lines[i].replace(/[\t\u00a0]+/g, ' ').trim();
+        if (!l) {
+            if (para.length) {
+                if (inSumario) {
+                    out.push({ t: 'sum_item', s: para.join(' '), ln: p1, nl: para.length });
+                } else {
+                    out.push({ t: 'p', s: para.join(' '), ln: p1, nl: para.length });
+                }
+                para = [];
+            }
+            continue;
+        }
+
+        if (/^sum[aa]rio\b/i.test(l)) {
+            if (para.length) { out.push({ t: 'p', s: para.join(' '), ln: p1, nl: para.length }); para = []; }
+            inSumario = true;
+            out.push({ t: 'sum_title', s: l, ln: i + 1 });
+            continue;
+        }
+
+        if (inSumario) {
+            if (/^1\s+introdu[cc][aa]o/i.test(l) || /^1\.\s+introdu[cc][aa]o/i.test(l)) {
+                inSumario = false;
             } else {
+                out.push({ t: 'sum_item', s: l, ln: i + 1, nl: 1 });
                 continue;
             }
         }
-        const iso = (i === 0 || !lines[i - 1].trim()) && (i + 1 >= lines.length || !lines[i + 1].trim());
-        const hd = headOf(l, iso);
-        if (hd) { flush(); inList = inQ = false; out.push({ t: 'h', ...hd, ln: i + 1 }); ref = hd.lv === 1 && /^refer[ee]ncias/i.test(hd.s); continue; }
+
+        const hd = headOf(l);
+        if (hd) {
+            if (para.length) { out.push({ t: 'p', s: para.join(' '), ln: p1, nl: para.length }); para = []; }
+            out.push({ t: 'h', ...hd, ln: i + 1 });
+            ref = hd.lv === 1 && /^refer[ee]ncias/i.test(hd.s);
+            continue;
+        }
         if (ref) {
-            flush();
-            const pv = out[out.length - 1];
-            if (pv && pv.t === 'r' && !/[.)]$/.test(pv.s)) { pv.s += ' ' + l; pv.nl++; }
-            else { out.push({ t: 'r', s: l, ln: i + 1, nl: 1 }); }
+            if (para.length) { out.push({ t: 'p', s: para.join(' '), ln: p1, nl: para.length }); para = []; }
+            out.push({ t: 'r', s: l, ln: i + 1, nl: 1 });
             continue;
         }
-        let m;
-        if (m = l.match(/^>\s?(.*)$/)) {
-            flush(); inList = false;
-            const pv = out[out.length - 1];
-            if (inQ && pv && pv.t === 'q') { pv.s += ' ' + m[1]; pv.nl++; }
-            else { out.push({ t: 'q', s: m[1], ln: i + 1, nl: 1 }); inQ = true; }
+        if (l.startsWith('>')) {
+            if (para.length) { out.push({ t: 'p', s: para.join(' '), ln: p1, nl: para.length }); para = []; }
+            out.push({ t: 'q', s: l.replace(/^>\s*/, ''), ln: i + 1, nl: 1 });
             continue;
         }
-        inQ = false;
-        if (m = l.match(LIST)) { flush(); out.push({ t: 'li', ord: !!(m[2] || m[3]), mk: m[1] ? '' : (m[2] || m[3]), mr: m[1] || "", s: m[4], ln: i + 1, nl: 1 }); inList = true; continue; }
-        if (inList) { const pv = out[out.length - 1]; pv.s += ' ' + l; pv.nl++; continue; }
-        if (!para.length) pl = i + 1;
+        if (!para.length) p1 = i + 1;
         para.push(l);
     }
-    flush();
-    let prev = 0;
-    out.forEach(b => {
-        if (b.t === 'h') {
-            const o = b.lv;
-            b.lv = Math.min(b.lv, prev + 1);
-            if (b.lv !== o) { LVLOG.push({ ln: b.ln, s: b.s, from: o, to: b.lv }); LVFIX++; }
-            prev = b.lv;
+    if (para.length) {
+        if (inSumario) {
+            out.push({ t: 'sum_item', s: para.join(' '), ln: p1, nl: para.length });
+        } else {
+            out.push({ t: 'p', s: para.join(' '), ln: p1, nl: para.length });
         }
-    });
+    }
     return out;
 }
 
 function ser(bl) {
     let o = "", pv = null;
     bl.forEach(b => {
-        const s = b.t === 'h' ? '#'.repeat(b.lv) + ' ' + b.s : b.t === 'q' ? '>' + b.s : b.t === 'li' ? (b.ord ? b.mk : '-') + ' ' + b.s : b.s;
-        o += (pv ? (pv.t === 'li' && b.t === 'li' ? '\n' : '\n\n') : "") + s;
+        let s = b.s;
+        if (b.t === 'h') s = '#'.repeat(b.lv) + ' ' + (b.no ? b.no + ' ' : '') + b.s;
+        else if (b.t === 'q') s = '> ' + b.s;
+        else if (b.t === 'sum_title') s = b.s;
+        else if (b.t === 'sum_item') s = b.s;
+        o += (pv ? "\n\n" : "") + s;
         pv = b;
     });
     return o;
@@ -263,32 +263,52 @@ function ser(bl) {
 
 function layoutModel(bl, c) {
     const n = [0, 0, 0];
+    const UNNUM = /^(resumo|abstract|resumen|refer[ee]ncias|agradecimentos|ap[ee]ndices?|anexos?|gloss[aa]rio|sum[aa]rio)/i;
+
+    let hasH1 = bl.some(b => b.t === 'h');
+    if (!hasH1 && bl.length > 0) {
+        bl = bl.map((b, idx) => {
+            if (idx === 0) return { t: 'h', lv: 1, s: 'Introdução', no: '1' };
+            if (idx === Math.floor(bl.length / 2)) return { t: 'h', lv: 1, s: 'Desenvolvimento', no: '2' };
+            if (idx === bl.length - 1 && bl.length > 3) return { t: 'h', lv: 1, s: 'Conclusão', no: '3' };
+            return b;
+        });
+    }
+
     return bl.map(b => {
         if (b.t !== 'h') return b;
         const un = b.lv === 1 && UNNUM.test(b.s);
-        let num = "";
-        if (c.num && !un) {
+        let num = b.no || "";
+        if (c.num && !un && !num) {
             if (b.lv > 1 && !n[0]) n[0] = 1;
             n[b.lv - 1]++;
             for (let i = b.lv; i < 3; i++) n[i] = 0;
             num = n.slice(0, b.lv).join('.');
         }
-        return { ...b, un, num, txt: (num ? num + ' ' : "") + (b.lv === 1 ? b.s.toUpperCase() : b.s) };
+        return { ...b, un, num, txt: (num ? num + " " : "") + (b.lv === 1 ? b.s.toUpperCase() : b.s) };
     });
 }
 
 function covers(c) {
     const o = [];
-    if (c.capa) o.push([{ s: c.inst.toUpperCase(), b: 1, sb: 0 }, { s: c.aut, sb: 2 }, { s: c.tit.toUpperCase(), b: 1, sb: 8 }, { s: c.cid, sb: 12 }, { s: c.ano, sb: 0 }].filter(i => i.s));
-    if (c.rosto) o.push([{ s: c.aut, sb: 0 }, { s: c.tit.toUpperCase(), b: 1, sb: 8 }, { s: c.cid, sb: 14 }, { s: c.ano, sb: 0 }].filter(i => i.s));
-    return o.filter(p => p.length);
-}
-
-function analyzeDoc(raw, c) {
-    const bl = parse(raw), lvlog = [...LVLOG], lines = raw.replace(/\r/g, "").split('\n'), F = [];
-    const A = (cat, st, t, o = {}) => F.push({ cat, st, t, ...o });
-    const hs = bl.map((b, i) => ({ b, i })).filter(x => x.b.t === 'h'), h1 = hs.filter(x => x.b.lv === 1 && !UNNUM.test(x.b.s)).map(x => x.b);
-    return { F, raw, applied: false };
+    if (c.capa) {
+        o.push([
+            { s: c.inst.toUpperCase(), b: 1, sb: 0, align: 'c' },
+            { s: c.aut, sb: 6, align: 'c' },
+            { s: c.tit.toUpperCase(), b: 1, sb: 12, align: 'c' },
+            { s: c.cid, sb: 18, align: 'c' },
+            { s: c.ano, sb: 1, align: 'c' }
+        ].filter(i => i.s));
+    }
+    if (c.rosto) {
+        o.push([
+            { s: c.aut, sb: 0, align: 'c' },
+            { s: c.tit.toUpperCase(), b: 1, sb: 6, align: 'c' },
+            { s: c.cid, sb: 14, align: 'c' },
+            { s: c.ano, sb: 1, align: 'c' }
+        ].filter(i => i.s));
+    }
+    return o;
 }
 
 function render() {
@@ -297,41 +317,50 @@ function render() {
     P.textContent = "";
     P.style.fontFamily = c.fonte === 'helvetica' ? 'Arial, Helvetica, sans-serif' : '"Times New Roman", Times, serif';
     P.style.fontSize = c.tam + 'pt';
-    covers(c).forEach(pg => {
+
+    covers(c).forEach((pg) => {
         const d = document.createElement('div');
-        d.className = 'cv';
+        d.className = 'preview-sheet cv';
         pg.forEach(it => {
             const p = document.createElement('p');
             p.textContent = it.s;
             p.style.marginTop = (it.sb * 1.5) + 'em';
             if (it.b) p.style.fontWeight = '700';
+            if (it.align === 'c') p.style.textAlign = 'center';
             d.append(p);
         });
         P.append(d);
     });
-    let sheet = null;
+
     const outField = E('out');
-    if (outField) {
-        layoutModel(parse(outField.value), c).forEach((b, idx) => {
-            if (b.t === 'h' || !sheet) {
+    const rawText = outField && outField.value.trim() ? outField.value : (E('txt') ? E('txt').value : '');
+    const parsedBlocks = parse(rawText);
+    const modelBlocks = layoutModel(parsedBlocks, c);
+
+    let sheet = null;
+    if (rawText) {
+        modelBlocks.forEach((b, idx) => {
+            if ((b.t === 'h' && b.lv === 1) || b.t === 'sum_title' || !sheet) {
                 sheet = document.createElement('div');
-                sheet.className = 'preview-sheet' + (idx === 0 && b.t !== 'h' ? ' first-sheet' : "");
+                sheet.className = 'preview-sheet' + (idx === 0 && b.t !== 'h' && b.t !== 'sum_title' ? ' first-sheet' : "");
                 P.append(sheet);
             }
             let e;
-            if (b.t === 'h') {
+            if (b.t === 'sum_title') {
+                e = document.createElement('h2');
+                e.textContent = b.s;
+                e.classList.add('c');
+                e.style.fontWeight = '700';
+            } else if (b.t === 'sum_item') {
+                e = document.createElement('p');
+                e.textContent = b.s;
+                e.style.textIndent = '0';
+            } else if (b.t === 'h') {
                 e = document.createElement(['', 'h2', 'h3', 'h4'][b.lv]);
                 e.textContent = b.txt;
-                e.classList.add('starts-page');
-                if (b.un) e.classList.add('c');
-            } else if (b.t === 'li') {
-                e = document.createElement('div');
-                e.className = 'li';
-                const m = document.createElement('span');
-                m.textContent = b.mk;
-                const x = document.createElement('span');
-                x.textContent = b.s;
-                e.append(m, x);
+                e.style.fontWeight = '700';
+                e.style.marginTop = '1em';
+                if (b.un || b.lv === 1) e.classList.add('c');
             } else {
                 e = document.createElement(b.t === 'q' ? 'blockquote' : 'p');
                 if (b.t === 'r') e.className = 'r';
@@ -340,6 +369,7 @@ function render() {
             sheet.append(e);
         });
     }
+
     const paperBox = document.querySelector('.paper-box');
     if (paperBox) {
         const k = Math.min(1, Math.max(.3, (paperBox.clientWidth - 24) / 794));
@@ -348,14 +378,14 @@ function render() {
 }
 
 function layout(bl, c, cov, mw, san) {
-    const { W, H, L, R, T, B, IND, QI, LM } = GEO, Z = c.tam, SL = Z * 1.15, LH = SL * 1.5, qs = Math.min(10, Z - 1), w = W - L - R, bot = H - B;
+    const { W, H, L, R, T, B, IND, QI, LM } = GEO;
+    const Z = c.tam, SL = Z * 1.15, LH = SL * 1.5, qs = Math.max(10, Z - 1), w = W - L - R, bot = H - B;
     const items = [];
     let pgn = -1, y = T, pend = 0;
     const np = () => { pgn++; y = T; pend = 0; };
     const sp = (f, s) => mw(f, s, " ");
     const chunk = (wd, f, s, mx) => {
-        const o = [];
-        let cur = "";
+        const o = []; let cur = "";
         for (const ch of wd) {
             if (mw(f, s, cur + ch) > mx && cur) { o.push(cur); cur = ch; }
             else { cur += ch; }
@@ -366,17 +396,14 @@ function layout(bl, c, cov, mw, san) {
     const wrap = (txt, f, s, mx, ind) => {
         const ws = txt.split(' ').filter(Boolean), sps = sp(f, s), Ls = [];
         let cur = [], cw = 0;
-        const push = (last, noj) => {
-            if (cur.length) { Ls.push({ w: cur, last, noj }); cur = []; cw = 0; }
-        };
+        const push = (last, noj) => { if (cur.length) { Ls.push({ w: cur, last, noj }); cur = []; cw = 0; } };
         for (const wd of ws) {
             const ww = mw(f, s, wd);
             if (ww > mx) {
                 push(false);
                 const fr = chunk(wd, f, s, mx);
                 fr.slice(0, -1).forEach(x => Ls.push({ w: [x], last: true, noj: true }));
-                cur = [fr[fr.length - 1]];
-                cw = mw(f, s, cur[0]);
+                cur = [fr[fr.length - 1]]; cw = mw(f, s, cur[0]);
                 continue;
             }
             const nw = cur.length ? cw + sps + ww : ww;
@@ -386,15 +413,23 @@ function layout(bl, c, cov, mw, san) {
         push(true);
         return Ls;
     };
+
     const mkb = b => {
-        if (b.t === 'h') return { kind: 'h', f: b.lv < 3 ? 'b' : 'n', size: Z, lh: LH, x0: L, maxW: w, ind: 0, just: 0, align: b.un && b.lv == 1 ? 'c' : 'l', before: LH, after: LH, keepNext: 1, keepWhole: 1, txt: b.txt };
+        if (b.t === 'sum_title') return { kind: 'sum_title', f: 'b', size: Z, lh: LH, x0: L, maxW: w, ind: 0, just: 0, align: 'c', before: LH, after: LH, keepWhole: 1, txt: b.s };
+        if (b.t === 'sum_item') return { kind: 'sum_item', f: 'n', size: Z, lh: LH, x0: L, maxW: w, ind: 0, just: 0, align: 'l', before: 0, after: 0, keepWhole: 1, txt: b.s };
+        if (b.t === 'h') return { kind: 'h', f: 'b', size: Z, lh: LH, x0: L, maxW: w, ind: 0, just: 0, align: b.un && b.lv === 1 ? 'c' : 'l', before: LH, after: LH, keepNext: 1, keepWhole: 1, txt: b.txt };
         if (b.t === 'q') return { kind: 'q', f: 'n', size: qs, lh: qs * 1.15, x0: L + QI, maxW: w - QI, ind: 0, just: 1, before: LH, after: LH, txt: b.s };
-        if (b.t === 'li') return { kind: 'li', f: 'n', size: Z, lh: LH, x0: L + IND + LM, maxW: w - IND - LM, ind: 0, just: 1, before: 0, after: 0, mark: b.mk, mkx: L + IND, txt: b.s, short: 1 };
+        if (b.t === 'li') return { kind: 'li', f: 'n', size: Z, lh: LH, x0: L + IND + LM, maxW: w - IND - LM, ind: 0, just: 1, before: 0, after: 0, mark: b.mk, txt: b.s, short: 1 };
         if (b.t === 'r') return { kind: 'r', f: 'n', size: Z, lh: SL, x0: L, maxW: w, ind: 0, just: 0, before: 0, after: SL, keepWhole: 1, txt: b.s };
         return { kind: 'p', f: 'n', size: Z, lh: LH, x0: L, maxW: w, ind: IND, just: 1, before: 0, after: 0, txt: b.s };
     };
+
     const blocks = bl.map(mkb);
-    blocks.forEach(b => { b.lines = wrap(san(b.txt), b.f, b.size, b.maxW, b.ind); if (b.short && b.lines.length <= 3) b.keepWhole = 1; });
+    blocks.forEach(b => {
+        b.lines = wrap(san(b.txt), b.f, b.size, b.maxW, b.ind);
+        if (b.short && b.lines.length <= 3) b.keepWhole = 1;
+    });
+
     cov.forEach(pgv => {
         np();
         let yy = T;
@@ -408,31 +443,39 @@ function layout(bl, c, cov, mw, san) {
             });
         });
     });
+
     if (blocks.length) np();
+
     const place = (b, bi, nb) => {
-        if (b.kind === 'h' && y !== T) np();
+        if (b.kind === 'sum_title' && y !== T) np();
         const n = b.lines.length;
         let i = 0;
         while (i < n) {
-            const rem = n - i, first = i === 0, atTop = y === T, sb = atTop ? 0 : (first ? Math.max(b.before, pend) : 0), room = bot - y - sb, fit = Math.floor((room + 0.01) / b.lh);
-            if (first && b.keepNext && nb && !atTop) {
+            const atTop = (y === T), sb = atTop ? 0 : (i === 0 ? Math.max(b.before, pend) : 0), room = bot - (y + sb);
+            const fit = Math.floor((room + 0.01) / b.lh);
+            if (i === 0 && b.keepNext && nb && !atTop) {
                 const need = n * b.lh + b.after + Math.min(2, nb.lines.length) * nb.lh;
                 if (room + 0.01 < need) { np(); continue; }
             }
-            let take = rem;
+            let take = rem = n - i;
             if (fit < rem) {
-                if (b.keepWhole || rem < 4) take = 0;
-                else { take = fit; if (take < 2) take = 0; else if (rem - take < 2) take = rem - 2; }
+                if (b.keepWhole || fit < 2) take = 0;
+                else { take = fit; if (rem - take < 4) take = Math.max(1, take - 2); }
             }
-            if (take <= 0) { if (!atTop) { np(); continue; } take = Math.max(1, fit); }
+            if (take <= 0) {
+                if (!atTop) { np(); continue; }
+                take = Math.max(1, fit);
+            }
             for (let k = 0; k < take; k++) {
-                const ln = b.lines[i + k], fl = i + k === 0, x0 = b.x0 + (fl ? b.ind : 0), av = b.maxW - (fl ? b.ind : 0);
+                const ln = b.lines[i + k], fl = (i + k === 0), x0 = b.x0 + (fl ? b.ind : 0), av = b.maxW - (fl ? b.ind : 0);
                 const nat = ln.w.reduce((a, x) => a + mw(b.f, b.size, x), 0) + (ln.w.length - 1) * sp(b.f, b.size);
                 let extra = 0, wd = nat;
                 if (b.just && !ln.last && !ln.noj && ln.w.length > 1 && nat < av) { extra = (av - nat) / (ln.w.length - 1); wd = av; }
                 items.push({
-                    role: 'body', blk: bi, bt: b.kind, li: i + k, n, pg: pgn, x: b.align === 'c' ? L + (w - wd) / 2 : x0, w: wd, yTop: y + sb + k * b.lh, lh: b.lh, size: b.size, f: b.f, words: ln.w, extra,
-                    mk: b.mark && i + k === 0 ? san(b.mark) : null, mkx: b.mkx, fl
+                    role: 'body', blk: bi, bt: b.kind, pg: pgn,
+                    x: b.align === 'c' ? L + (w - wd) / 2 : x0,
+                    w: wd, yTop: y + sb + k * b.lh, lh: b.lh, size: b.size, f: b.f,
+                    words: ln.w, extra, mk: b.mark && i + k === 0 ? b.mark : null, mkx: b.mkx, fl
                 });
             }
             y += sb + take * b.lh;
@@ -441,32 +484,38 @@ function layout(bl, c, cov, mw, san) {
             if (i < n) np();
         }
     };
-    blocks.forEach((b, i) => place(b, i, blocks[i + 1]));
+
+    blocks.forEach((b, i) => place(b, i, blocks[i - 1]));
+
     for (let p = cov.length; p <= pgn; p++) {
         const s = String(p + 1), wd = mw('n', 10, s);
-        items.push({ role: 'num', pg: p, x: W - R - wd, w: wd, base: 56.69 + 7.2, lh: 11.5, size: 10, f: 'n', words: [s], extra: 0 });
+        items.push({ role: 'num', pg: p, x: W - R - wd, base: 56.69 + 7.2, lh: 11.5, size: 10, f: 'n', words: [s], extra: 0 });
     }
+
     return { items, pages: pgn + 1, cov: cov.length };
 }
 
 let REP = null, LAST = null;
-
 async function buildPdf() {
     const P = window.PDFLib;
     if (!P) throw new Error('pdflib');
-    const c = cfg(), outField = E('out'), raw = outField ? outField.value : '', bl = layoutModel(parse(raw), c), pdf = await P.PDFDocument.create();
+    const c = cfg(), outField = E('out'), raw = outField && outField.value.trim() ? outField.value : (E('txt') ? E('txt').value : ''), bl = layoutModel(parse(raw), c), pdf = await P.PDFDocument.create();
     const fam = c.fonte === 'helvetica' ? ['Helvetica', 'HelveticaBold', 'HelveticaOblique'] : ['TimesRoman', 'TimesRomanBold', 'TimesRomanItalic'];
     const F = { n: await pdf.embedFont(P.StandardFonts[fam[0]]), b: await pdf.embedFont(P.StandardFonts[fam[1]]), i: await pdf.embedFont(P.StandardFonts[fam[2]]) };
     const badc = new Set(), cache = new Map();
-    const san = s => [...String(s).replace(/\u00a0/g, '').replace(/[\t\r\n]+/g, '')].map(ch => {
+    const san = s => [...String(s).replace(/\u00a0/g, ' ')].map(ch => {
         if (cache.has(ch)) return cache.get(ch);
         let r = ch;
         try { F.n.widthOfTextAtSize(ch, 12); } catch (e) { r = '?'; badc.add(ch); }
         cache.set(ch, r);
         return r;
     }).join("");
+
     const cwc = {}, cw = (f, ch) => { const k = f + ch; return cwc[k] ?? (cwc[k] = F[f].widthOfTextAtSize(ch, 1000) / 1000); };
-    const r = layout(bl, c, covers(c), (f, s, t) => { let w = 0; for (const ch of t) w += cw(f, ch); return w * s; }, san);
+    const r = layout(bl, c, covers(c), (f, s, t) => {
+        let w = 0; for (const ch of t) w += cw(f, ch); return w * s;
+    }, san);
+
     for (let i = 0; i < r.pages; i++) pdf.addPage([GEO.W, GEO.H]);
     r.items.forEach(it => {
         const pg = pdf.getPage(it.pg), font = F[it.f], base = it.base ?? (it.yTop + (it.lh - it.size) / 2 + it.size * .8), txt = it.words.join(' ');
@@ -474,13 +523,13 @@ async function buildPdf() {
         if (it.extra > 0) pg.pushOperators(P.setWordSpacing(it.extra));
         pg.drawText(txt, { x: it.x, y: GEO.H - base, size: it.size, font });
         if (it.extra > 0) pg.pushOperators(P.setWordSpacing(0));
-        if (it.mk) pg.drawText(it.mk, { x: it.mkx, y: GEO.H - base, size: it.size, font });
     });
+
     pdf.setTitle(c.tit || 'Documento ABNT');
     pdf.setAuthor(c.aut || "");
     pdf.setProducer('Me-Formata');
     try { pdf.setLanguage('pt-BR'); } catch (e) { }
-    const bytes = await pdf.save(), chk = await P.PDFDocument.load(bytes);
+    const bytes = await pdf.save();
     return { blob: new Blob([bytes], { type: 'application/pdf' }), rep: { pages: r.pages } };
 }
 
@@ -488,8 +537,7 @@ const sig = () => (E('out') ? E('out').value : '') + JSON.stringify(cfg());
 async function getPdf() {
     if (LAST && LAST.key === sig()) return LAST.blob;
     const r = await buildPdf();
-    REP = r.rep;
-    LAST = { key: sig(), blob: r.blob };
+    REP = r.rep; LAST = { key: sig(), blob: r.blob };
     return r.blob;
 }
 
@@ -498,8 +546,7 @@ async function measure() {
     if (!outField || !outField.value.trim()) { REP = null; verify(); return; }
     try {
         const k = sig(), r = await buildPdf();
-        REP = r.rep;
-        LAST = { key: k, blob: r.blob };
+        REP = r.rep; LAST = { key: k, blob: r.blob };
     } catch (e) { }
     verify();
 }
@@ -512,7 +559,6 @@ function refresh() {
     clearTimeout(tm);
     tm = setTimeout(measure, 450);
 }
-
 function verify() { }
 
 const st = async (v, m) => {
@@ -538,13 +584,11 @@ function resetAna() {
 const anBtn = E('anBtn');
 if (anBtn) {
     anBtn.onclick = async () => {
-        const txtField = E('txt');
-        const o = txtField ? txtField.value : '';
+        const txtField = E('txt'), o = txtField ? txtField.value : '';
         if (!o.trim()) return toast('Cole ou importe um texto primeiro.');
         try {
             setStage(2);
             await st(25, 'Identificando títulos, citações e referências...');
-            analyzeDoc(o, cfg());
             await st(70, 'Montando o relatório...');
             const fmtBtn = E('fmtBtn');
             if (fmtBtn) fmtBtn.disabled = false;
@@ -569,8 +613,7 @@ if (anBtn) {
 const fmtBtn = E('fmtBtn');
 if (fmtBtn) {
     fmtBtn.onclick = async () => {
-        const txtField = E('txt');
-        const outField = E('out');
+        const txtField = E('txt'), outField = E('out');
         if (!txtField || !outField) return;
         const o = txtField.value;
         try {
@@ -630,7 +673,7 @@ if (clr) {
 }
 
 const tipoEl = E('tipo');
-const PRE = { escolar: [0, 0], artigo: [0, 0], relatorio: [1, 0], tcc: [1, 0] };
+const PRE = { escolar: [0, 0], artigo: [0, 0], relatorio: [1, 0], tcc: [1, 1] };
 if (tipoEl) {
     tipoEl.onchange = () => {
         const p = PRE[tipoEl.value];
@@ -662,10 +705,8 @@ async function pdfText(f) {
         let s = "", ly = null, lh = 12;
         for (const it of c.items) {
             const y = it.transform[5], h = it.height || lh;
-            if (ly !== null && Math.abs(y - ly) > h * .5) s += (ly - y > h * 1.8) ? '\n\n' : '\n';
-            s += it.str;
-            ly = y;
-            lh = h;
+            if (ly !== null && Math.abs(y - ly) > h * 1.5) s += (ly - y > h * 1.8 ? '\n\n' : '\n');
+            s += it.str; ly = y; lh = h;
         }
         pg.push(s);
     }
@@ -681,7 +722,7 @@ if (f2) {
         try {
             let t;
             await st(30, 'Lendo o arquivo...');
-            if (/.docx$/i.test(f.name)) t = (await mammoth.extractRawText({ arrayBuffer: await f.arrayBuffer() })).value;
+            if (/\.docx$/i.test(f.name)) t = (await mammoth.extractRawText({ arrayBuffer: await f.arrayBuffer() })).value;
             else if (/\.pdf$/i.test(f.name) || f.type === 'application/pdf') t = await pdfText(f);
             else if (/\.txt$/i.test(f.name) || f.type === 'text/plain') t = await f.text();
             else {
@@ -719,8 +760,8 @@ document.querySelectorAll('label.drop').forEach(d => {
 
 const plain = () => {
     const outField = E('out');
-    if (!outField) return '';
-    return layoutModel(parse(outField.value), cfg()).map(b => b.t === 'h' ? b.txt : b.t === 'li' ? b.mk + ' ' + b.s : b.t === 'p' ? '    ' + b.s : b.s).join('\n\n');
+    const rawText = outField && outField.value.trim() ? outField.value : (E('txt') ? E('txt').value : '');
+    return layoutModel(parse(rawText), cfg()).map(b => b.t === 'h' ? b.txt : b.s).join('\n\n');
 };
 
 const need = () => {
@@ -731,28 +772,54 @@ const need = () => {
 function makeDocx() {
     const d = window.docx;
     if (!d) throw new Error('docx');
-    const c = cfg(), outField = E('out'), bl = layoutModel(parse(outField ? outField.value : ''), c), Z = c.tam * 2, LT = Math.round(c.tam * 1.15 * 1.5 * 20), ST = Math.round(c.tam * 1.15 * 20), F = c.fonte === 'helvetica' ? 'Arial' : 'Times New Roman', A = d.AlignmentType, AU = d.LineRuleType.AUTO;
+    const c = cfg(), outField = E('out');
+    const rawText = outField && outField.value.trim() ? outField.value : (E('txt') ? E('txt').value : '');
+    const parsedBlocks = parse(rawText);
+    const bl = layoutModel(parsedBlocks, c);
+    const Z = c.tam * 2, LT = Math.round(c.tam * 1.15 * 1.5 * 20), ST = Math.round(c.tam * 1.15 * 20);
+    const F = c.fonte === 'helvetica' ? 'Arial' : 'Times New Roman';
+    const A = d.AlignmentType, AU = d.LineRuleType.AUTO;
     const run = (s, o = {}) => new d.TextRun({ text: s, font: F, size: o.sz || Z, bold: !!o.b, italics: !!o.i });
-    const pg = { size: { width: 11906, height: 16838 }, margin: { top: 1701, left: 1701, bottom: 1134, right: 1134 } }, cov = covers(c), secs = [];
-    if (cov.length) secs.push({ properties: { page: pg }, children: cov.flatMap((p, i) => p.map((it, j) => new d.Paragraph({ alignment: A.CENTER, pageBreakBefore: i > 0 && j === 0, spacing: { before: Math.round(it.sb * LT), line: 360, lineRule: AU }, children: [run(it.s, { b: it.b })] }))) });
+    const pg = { size: { width: 11906, height: 16838 }, margin: { top: 1701, left: 1701, bottom: 1134, right: 1134 } };
+
+    const cov = covers(c);
+    const secs = [];
+
+    cov.forEach((p, i) => {
+        secs.push({
+            properties: { page: pg },
+            children: p.map((it, j) => new d.Paragraph({
+                alignment: A.CENTER,
+                pageBreakBefore: i > 0 || j > 0,
+                spacing: { before: Math.round(it.sb * LT), line: 360, lineRule: AU },
+                children: [run(it.s, { b: it.b })]
+            }))
+        });
+    });
+
     let pa = 0;
     const gap = (bf, af) => { const v = Math.max(0, bf - pa); pa = af; return v; };
-    const kids = bl.map((b, idx) => {
-        if (b.t === 'h') return new d.Paragraph({ alignment: b.un && b.lv === 1 ? A.CENTER : A.LEFT, pageBreakBefore: idx > 0, keepNext: true, keepLines: true, spacing: { before: gap(LT, LT), after: LT, line: 360, lineRule: AU }, children: [run(b.txt, { b: b.lv < 3, i: b.lv == 3 })] });
+
+    const kids = bl.map((b) => {
+        if (b.t === 'sum_title') return new d.Paragraph({ alignment: A.CENTER, pageBreakBefore: true, spacing: { before: gap(LT, LT), after: LT, line: 360, lineRule: AU }, children: [run(b.s, { b: true })] });
+        if (b.t === 'sum_item') return new d.Paragraph({ alignment: A.LEFT, spacing: { line: 360, lineRule: AU }, children: [run(b.s)] });
+        if (b.t === 'h') return new d.Paragraph({ alignment: b.un && b.lv === 1 ? A.CENTER : A.LEFT, pageBreakBefore: b.lv === 1, keepNext: true, keepLines: true, spacing: { before: gap(LT, LT), after: LT, line: 360, lineRule: AU }, children: [run(b.txt, { b: true, i: b.lv == 3 })] });
         if (b.t === 'q') return new d.Paragraph({ alignment: A.JUSTIFIED, indent: { left: 2268 }, keepLines: true, spacing: { before: gap(LT, LT), after: LT, line: 240, lineRule: AU }, children: [run(b.s, { sz: Math.min(10, c.tam - 1) * 2 })] });
         if (b.t === 'r') return new d.Paragraph({ alignment: A.LEFT, keepLines: true, spacing: { before: gap(0, ST), after: ST, line: 240, lineRule: AU }, children: [run(b.s)] });
         if (b.t === 'li') return new d.Paragraph({ alignment: A.JUSTIFIED, indent: { left: 1134, hanging: 425 }, tabStops: [{ type: d.TabStopType.LEFT, position: 1134 }], keepLines: true, spacing: { before: gap(0, 0), after: 0, line: 360, lineRule: AU }, children: [run(b.mk), new d.TextRun({ children: [new d.Tab()], font: F, size: Z }), run(b.s)] });
         return new d.Paragraph({ alignment: A.JUSTIFIED, indent: { firstLine: 709 }, spacing: { before: gap(0, 0), after: 0, line: 360, lineRule: AU }, children: [run(b.s)] });
     });
+
     secs.push({
         properties: { page: { ...pg, pageNumbers: { start: cov.length + 1 } } },
         headers: { default: new d.Header({ children: [new d.Paragraph({ alignment: A.RIGHT, children: [new d.TextRun({ children: [d.PageNumber.CURRENT], font: F, size: 20 })] })] }) },
         children: kids
     });
+
     return d.Packer.toBlob(new d.Document({ creator: c.aut || "", title: c.tit || 'Documento ABNT', styles: { default: { document: { run: { font: F, size: Z } } } }, sections: secs }));
 }
 
-const nome = () => (cfg().tit || 'texto-abnt').replace(/[^\p{L}\p{N} _-]/gu, "").trim().slice(0, 60) || 'texto-abnt';
+const nome = () => (cfg().tit || 'texto-abnt').replace(/[^\p{L}\p{N}_-]/gu, "").trim().slice(0, 60) || 'texto-abnt';
 const safe = async fn => {
     try { await fn(); } catch (e) {
         toast(e.message === 'docx' ? 'Biblioteca DOCX não carregou.' : e.message === 'pdflib' ? 'Biblioteca de PDF não carregou.' : 'Erro ao gerar o arquivo.');
@@ -784,22 +851,20 @@ if (cpBtn) cpBtn.onclick = async () => {
     const t = plain();
     try { await navigator.clipboard.writeText(t); } catch (e) {
         const a = document.createElement('textarea');
-        a.value = t;
-        document.body.append(a);
-        a.select();
-        document.execCommand('copy');
-        a.remove();
+        a.value = t; document.body.append(a); a.select(); document.execCommand('copy'); a.remove();
     }
     toast('Texto copiado!');
 };
 
-document.querySelectorAll('[data-tab]').forEach(a => a.addEventListener('click', ev => {
-    ev.preventDefault();
-    const d = a.dataset, t = E(d.tab);
-    if (t && !t.checked) { t.checked = true; t.dispatchEvent(new Event('change')); }
-    if (d.to && E(d.to)) E(d.to).checked = true;
-    d.go ? E(d.go).scrollIntoView({ behavior: 'smooth' }) : window.scrollTo(0, 0);
-}));
+document.querySelectorAll('[data-tab]').forEach(a => {
+    a.addEventListener('click', ev => {
+        ev.preventDefault();
+        const d = a.dataset, t = E(d.tab);
+        if (t && !t.checked) { t.checked = true; t.dispatchEvent(new Event('change')); }
+        if (d.to && E(d.to)) E(d.to).checked = true;
+        d.go ? E(d.go).scrollIntoView({ behavior: 'smooth' }) : window.scrollTo(0, 0);
+    });
+});
 
 /* Módulo de QR Code */
 (function () {

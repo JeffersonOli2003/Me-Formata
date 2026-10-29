@@ -1242,7 +1242,7 @@ details[open]>summary::before {
     }
 }
 
-.qr-card {
+.gr-card {
     max-width: 760px;
     margin: 0 auto;
 }
@@ -1252,12 +1252,12 @@ details[open]>summary::before {
     margin: 0 auto 22px;
 }
 
-#qr-generator .qr-card {
+#qr-generator .gr-card {
     max-width: 760px;
     margin: 0 auto;
 }
 
-#qr-generator .qr-card .t {
+#qr-generator .gr-card .t {
     width: 100%;
     margin-top: 7px;
 }
