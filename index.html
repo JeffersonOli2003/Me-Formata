@@ -11,6 +11,36 @@
 </head>
 
 <body>
+    <!-- INTRODUÇÃO ANIMADA (splash): some sozinha em 2,5 s e não bloqueia cliques -->
+    <div class="splash" id="splash" aria-hidden="true">
+        <div class="sp-tile">
+            <svg class="sp-logo" xmlns="http://www.w3.org/2000/svg" viewBox="170 140 880 900" focusable="false">
+                <path class="sp-blue sp-page" stroke-width="42"
+                    d="M712 222H354c-42 0-70 29-70 70v606c0 40 29 69 70 69h363m-5-798h28c23 0 39 8 55 25l135 145c16 17 23 34 23 57v264" />
+                <path class="sp-fold" fill="#1689D2" d="M744 282v105c0 23 14 38 38 38h104z" />
+                <path class="sp-letter"
+                    d="M398 773V410c0-12 9-21 21-21h76c10 0 18 5 24 14l83 133 81-133c6-9 14-14 25-14h76c12 0 21 9 21 21v342c-34 5-62 20-86 43V535l-94 141c-7 10-14 15-23 15s-17-5-23-15l-94-141v217c0 12-9 21-21 21h-45c-12 0-21-9-21-21z" />
+                <path class="sp-blue sp-check" stroke-width="43" d="M730 850l70 70 116-145" />
+            </svg>
+        </div>
+        <div class="sp-name">Me-Formata</div>
+        <div class="sp-tag">Seu documento no formato certo.</div>
+        <div class="sp-bar"><span></span></div>
+    </div>
+    <script>
+        (function () {
+            try {
+                var s = document.getElementById('splash'), r = document.documentElement;
+                if (!s) return;
+                r.classList.add('splash-on');
+                setTimeout(function () {
+                    r.classList.remove('splash-on');
+                    if (s.parentNode) s.parentNode.removeChild(s);
+                }, 2500);
+            } catch (e) { }
+        })();
+    </script>
+
     <input class="tab" type="radio" name="tab" id="t0" checked aria-label="Início">
     <input class="tab" type="radio" name="tab" id="t1" aria-label="Conversor">
     <input class="tab" type="radio" name="tab" id="t2" aria-label="ABNT">
