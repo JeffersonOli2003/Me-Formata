@@ -43,6 +43,7 @@ if (f1) {
         const n = f1.files.length;
         $('#sel').textContent = n ? n + ' arquivo(s): ' + [...f1.files].map(f => f.name).join(', ') : 'Nenhum arquivo selecionado.';
         $('#go').disabled = !n;
+        cvMsg("");
     };
 }
 
@@ -72,9 +73,111 @@ async function pages(f) {
         }
         return r;
     }
+    if (/svg/i.test(f.type) || /\.svg$/i.test(f.name)) {
+        const si = await img(await rd(f));
+        let w = si.naturalWidth || 1024, h = si.naturalHeight || 1024;
+        const k = Math.max(w, h) < 1000 ? 2000 / Math.max(w, h) : 1;
+        const sc = cv(Math.round(w * k), Math.round(h * k), true);
+        sc.getContext('2d').drawImage(si, 0, 0, sc.width, sc.height);
+        return [{ c: sc, n: base(f.name) }];
+    }
     const i = await img(await rd(f)), c = cv(i.naturalWidth, i.naturalHeight, true);
     c.getContext('2d').drawImage(i, 0, 0);
     return [{ c, n: base(f.name) }];
+}
+
+/* ===== SVG: helpers ===== */
+const cvMsg = m => { const s = $('#cvStatus'); if (s) s.textContent = m || ""; };
+const isPdfF = f => /pdf/i.test(f.type) || /\.pdf$/i.test(f.name);
+const isSvgF = f => /svg/i.test(f.type) || /\.svg$/i.test(f.name);
+const yieldUI = () => new Promise(r => setTimeout(r, 30));
+
+function validSvg(str) {
+    const d = new DOMParser().parseFromString(str, 'image/svg+xml');
+    if (d.querySelector('parsererror') || d.documentElement.nodeName !== 'svg') throw new Error('svginvalid');
+    return str;
+}
+const svgBlob = str => new Blob([str], { type: 'image/svg+xml' });
+
+// PDF -> SVG (vetorial via pdf.js SVGGraphics; fallback: página embutida em alta resolução)
+async function pdfToSvgFiles(f, notify) {
+    setWorker();
+    const doc = await pdfjsLib.getDocument({ data: await f.arrayBuffer() }).promise, res = [];
+    let fallbacks = 0;
+    for (let i = 1; i <= doc.numPages; i++) {
+        notify('Convertendo "' + f.name + '" para SVG: página ' + i + ' de ' + doc.numPages + '...');
+        await yieldUI();
+        const pg = await doc.getPage(i), vp = pg.getViewport({ scale: 1 });
+        let svgStr = null;
+        try {
+            if (!pdfjsLib.SVGGraphics) throw new Error('nosvggfx');
+            const ops = await pg.getOperatorList();
+            const g = new pdfjsLib.SVGGraphics(pg.commonObjs, pg.objs);
+            g.embedFonts = true;
+            const el = await g.getSVG(ops, vp);
+            if (!el.getAttribute('viewBox')) el.setAttribute('viewBox', '0 0 ' + vp.width + ' ' + vp.height);
+            el.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+            svgStr = '<?xml version="1.0" encoding="UTF-8"?>\n' + new XMLSerializer().serializeToString(el);
+            validSvg(svgStr);
+        } catch (e) {
+            console.warn('SVG vetorial falhou na página ' + i + '; usando fallback.', e);
+            svgStr = null;
+        }
+        if (!svgStr) {
+            fallbacks++;
+            const v2 = pg.getViewport({ scale: 2 }), c = cv(v2.width, v2.height, true);
+            await pg.render({ canvasContext: c.getContext('2d'), viewport: v2 }).promise;
+            svgStr = '<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" ' +
+                'xmlns:xlink="http://www.w3.org/1999/xlink" width="' + vp.width + '" height="' + vp.height +
+                '" viewBox="0 0 ' + vp.width + ' ' + vp.height + '"><image width="' + vp.width + '" height="' +
+                vp.height + '" xlink:href="' + c.toDataURL('image/png') + '"/></svg>';
+            validSvg(svgStr);
+        }
+        res.push({ name: base(f.name) + (doc.numPages > 1 ? '-p' + i : "") + '.svg', blob: svgBlob(svgStr) });
+    }
+    return { files: res, fallbacks };
+}
+
+// PNG/JPG -> SVG (vetorização com ImageTracer)
+async function imageToSvgFile(f, notify) {
+    if (!window.ImageTracer) throw new Error('tracer');
+    notify('Vetorizando "' + f.name + '"... isso pode levar alguns segundos.');
+    await yieldUI();
+    const im = await img(await rd(f));
+    const w = im.naturalWidth, h = im.naturalHeight;
+    const k = Math.min(1, 1400 / Math.max(w, h));
+    const tw = Math.max(1, Math.round(w * k)), th = Math.max(1, Math.round(h * k));
+    const isJpg = /jpe?g/i.test(f.type) || /\.jpe?g$/i.test(f.name);
+    const c = cv(tw, th, isJpg); // JPG: fundo branco; PNG: preserva transparência
+    c.getContext('2d').drawImage(im, 0, 0, tw, th);
+    const data = c.getContext('2d').getImageData(0, 0, tw, th);
+    await yieldUI();
+    let svg = window.ImageTracer.imagedataToSVG(data, {
+        numberofcolors: 32, colorsampling: 2, colorquantcycles: 3,
+        ltres: 1, qtres: 1, pathomit: 8, blurradius: 0, strokewidth: 0,
+        roundcoords: 1, scale: 1, viewbox: true, desc: false, linefilter: false
+    });
+    if (!/<svg[^>]*\swidth=/.test(svg)) svg = svg.replace('<svg ', '<svg width="' + w + '" height="' + h + '" ');
+    if (!/xmlns=/.test(svg)) svg = svg.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ');
+    svg = '<?xml version="1.0" encoding="UTF-8"?>\n' + svg;
+    validSvg(svg);
+    return { name: base(f.name) + '.svg', blob: svgBlob(svg) };
+}
+
+async function convertToSvg() {
+    let skipped = 0, fallbacks = 0;
+    for (const f of f1.files) {
+        if (isSvgF(f)) { skipped++; continue; }
+        if (isPdfF(f)) {
+            const r = await pdfToSvgFiles(f, cvMsg);
+            out.push(...r.files); fallbacks += r.fallbacks;
+        } else {
+            out.push(await imageToSvgFile(f, cvMsg));
+        }
+    }
+    if (skipped) toast(skipped + ' arquivo(s) já estão em SVG e foram ignorados.');
+    if (fallbacks) toast('Algumas páginas tinham conteúdo que não pôde ser mantido como vetor; foram salvas como imagem dentro do SVG.');
+    if (!out.length) throw new Error('nothing');
 }
 
 const goBtn = $('#go');
@@ -82,11 +185,14 @@ if (goBtn) {
     goBtn.onclick = async () => {
         const to = document.querySelector('input[name=to]:checked').value, b = $('#go');
         b.disabled = true; b.textContent = 'Convertendo...';
-        out = [];
+        out = []; cvMsg('Preparando a conversão...');
         try {
-            if (to === 'pdf') {
+            if (to === 'svg') {
+                await convertToSvg();
+            } else if (to === 'pdf') {
                 const PL = window.PDFLib, pdf = await PL.PDFDocument.create();
                 for (const f of f1.files) {
+                    cvMsg('Processando "' + f.name + '"...');
                     for (const p of await pages(f)) {
                         const jb = await blob(p.c, 'jpg'), im = await pdf.embedJpg(new Uint8Array(await jb.arrayBuffer())), w = p.c.width * .75, hh = p.c.height * .75;
                         pdf.addPage([w, hh]).drawImage(im, { x: 0, y: 0, width: w, height: hh });
@@ -95,15 +201,23 @@ if (goBtn) {
                 out.push({ name: (f1.files.length > 1 ? 'arquivos-juntos' : base(f1.files[0].name)) + '.pdf', blob: new Blob([await pdf.save()], { type: 'application/pdf' }) });
             } else {
                 for (const f of f1.files) {
+                    cvMsg('Processando "' + f.name + '"...');
                     for (const p of await pages(f)) {
                         out.push({ name: p.n + '.' + to, blob: await blob(p.c, to) });
                     }
                 }
             }
             showConv();
+            cvMsg('Conversão concluída: ' + out.length + ' arquivo(s) pronto(s).');
         } catch (e) {
-            toast('Não consegui converter este arquivo. Tente outro.');
             console.error(e);
+            cvMsg("");
+            toast(
+                e.message === 'tracer' ? 'A biblioteca de vetorização não carregou. Verifique sua conexão e recarregue a página.' :
+                    e.message === 'svginvalid' ? 'O SVG gerado não passou na validação. Tente outro arquivo.' :
+                        e.message === 'nothing' ? 'Nenhum arquivo para converter. Selecione PDF, PNG ou JPG para gerar SVG.' :
+                            'Não consegui converter este arquivo. Tente outro.'
+            );
         }
         b.disabled = false; b.textContent = 'Converter';
     };

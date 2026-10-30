@@ -211,7 +211,7 @@
                                 arquivo.</small></span><em>Em breve</em></div>
                     <a class="tl" href="#" data-tab="t1"><span class="ic"><svg class="i" aria-hidden="true">
                                 <use href="#sync" />
-                            </svg></span><span><b>Outras conversões</b><small>PNG, JPG e PDF em qualquer
+                            </svg></span><span><b>Outras conversões</b><small>PNG, JPG, SVG e PDF em qualquer
                                 direção.</small></span><span class="go"><svg class="i" aria-hidden="true">
                                 <use href="#arr" />
                             </svg></span></a>
@@ -228,8 +228,8 @@
                     <li><b>Formatar ABNT</b>Cole ou importe um texto de trabalho (.txt, .docx ou .pdf), ajuste o tipo e
                         baixe em DOCX editável ou PDF. Margens, fonte, espaçamento, recuo, títulos, citações longas e
                         referências são tratados.</li>
-                    <li><b>Converter arquivos</b>PDF, PNG e JPG em qualquer direção, com envio por WhatsApp, e-mail,
-                        Outlook, Instagram e outros apps pelo menu do seu aparelho.</li>
+                    <li><b>Converter arquivos</b>PDF, PNG, JPG e SVG em qualquer direção, com envio por WhatsApp,
+                        e-mail, Outlook, Instagram e outros apps pelo menu do seu aparelho.</li>
                     <li><b>Privacidade</b>Tudo é processado no seu navegador. Seus arquivos não são enviados a
                         servidores.</li>
                     <li><b>Limites</b>Sumário, notas de rodapé, tabelas e figuras ainda não são gerados, e exigências
@@ -242,7 +242,7 @@
     <div class="wrap">
         <div class="ph" id="ph1">
             <h2 class="ft-t">Converter arquivos</h2>
-            <p class="sub">PDF, PNG e JPG em qualquer direção. Nada é enviado a servidores.</p>
+            <p class="sub">PDF, PNG, JPG e SVG em qualquer direção. Nada é enviado a servidores.</p>
         </div>
         <div class="ph" id="ph2">
             <h2 class="ft-t">Formatar nas normas ABNT</h2>
@@ -264,19 +264,23 @@
         <!-- PÁGINA 1: CONVERSOR -->
         <section class="page" id="p1">
             <div class="card">
-                <label class="drop" for="f1">Toque para escolher arquivos<small>PDF, PNG ou JPG (pode escolher
+                <label class="drop" for="f1">Toque para escolher arquivos<small>PDF, PNG, JPG ou SVG (pode escolher
                         vários)</small><input id="f1" type="file"
-                        accept=".pdf, .png, .jpg, .jpeg, application/pdf, image/png, image/jpeg" multiple></label>
+                        accept=".pdf, .png, .jpg, .jpeg, .svg, application/pdf, image/png, image/jpeg, image/svg+xml"
+                        multiple></label>
                 <p class="hint" id="sel" aria-live="polite" style="margin:10px 0 0">Nenhum arquivo selecionado.</p>
                 <label class="l">Converter para</label>
                 <div class="pills">
                     <input type="radio" name="to" id="toPng" value="png" checked><label for="toPng">PNG</label>
                     <input type="radio" name="to" id="toJpg" value="jpg"><label for="toJpg">JPG</label>
                     <input type="radio" name="to" id="toPdf" value="pdf"><label for="toPdf">PDF</label>
+                    <input type="radio" name="to" id="toSvg" value="svg"><label for="toSvg">SVG</label>
                 </div>
                 <div class="row"><button class="pri" id="go" disabled>Converter</button></div>
-                <p class="hint">PDF → PNG/JPG gera uma imagem por página. Várias imagens → PDF juntam tudo em um único
-                    PDF.</p>
+                <p class="hint" id="cvStatus" role="status" aria-live="polite" style="min-height:1.3em"></p>
+                <p class="hint">PDF → PNG/JPG/SVG gera um arquivo por página (no SVG, o conteúdo continua vetorial).
+                    PNG/JPG → SVG usa vetorização automática: o resultado é uma aproximação em curvas, ideal para logos
+                    e ilustrações. Várias imagens → PDF juntam tudo em um único PDF.</p>
             </div>
             <div class="card" id="res" hidden>
                 <strong>Prontos para enviar</strong>
@@ -428,6 +432,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/docx@9.6.1/dist/index.iife.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/imagetracerjs@1.2.6/imagetracer_v1.2.6.js"></script>
     <script src="app.js"></script>
 </body>
 
