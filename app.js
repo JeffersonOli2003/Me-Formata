@@ -291,23 +291,26 @@ function layoutModel(bl, c) {
 
 function covers(c) {
     const o = [];
+
     if (c.capa) {
         o.push([
             { s: c.inst.toUpperCase(), b: 1, sb: 0, align: 'c' },
             { s: c.aut, sb: 6, align: 'c' },
-            { s: c.tit.toUpperCase(), b: 1, sb: 12, align: 'c' },
-            { s: c.cid, sb: 18, align: 'c' },
-            { s: c.ano, sb: 1, align: 'c' }
-        ].filter(i => i.s));
-    }
-    if (c.rosto) {
-        o.push([
-            { s: c.aut, sb: 0, align: 'c' },
             { s: c.tit.toUpperCase(), b: 1, sb: 6, align: 'c' },
             { s: c.cid, sb: 14, align: 'c' },
             { s: c.ano, sb: 1, align: 'c' }
         ].filter(i => i.s));
     }
+
+    if (c.rosto) {
+        o.push([
+            { s: c.aut, sb: 0, align: 'c' },
+            { s: c.tit.toUpperCase(), b: 1, sb: 6, align: 'c' },
+            { s: c.cid, sb: 10, align: 'c' },
+            { s: c.ano, sb: 1, align: 'c' }
+        ].filter(i => i.s));
+    }
+
     return o;
 }
 
@@ -772,51 +775,223 @@ const need = () => {
 function makeDocx() {
     const d = window.docx;
     if (!d) throw new Error('docx');
-    const c = cfg(), outField = E('out');
-    const rawText = outField && outField.value.trim() ? outField.value : (E('txt') ? E('txt').value : '');
+
+    const c = cfg();
+    const outField = E('out');
+    const rawText = outField && outField.value.trim()
+        ? outField.value
+        : (E('txt') ? E('txt').value : '');
+
     const parsedBlocks = parse(rawText);
     const bl = layoutModel(parsedBlocks, c);
-    const Z = c.tam * 2, LT = Math.round(c.tam * 1.15 * 1.5 * 20), ST = Math.round(c.tam * 1.15 * 20);
+
+    const Z = Math.round(c.tam * 2);
+    const LINE = Math.round(c.tam * 1.5 * 20);
+    const SMALL = Math.round(Math.max(10, c.tam - 1) * 2);
     const F = c.fonte === 'helvetica' ? 'Arial' : 'Times New Roman';
-    const A = d.AlignmentType, AU = d.LineRuleType.AUTO;
-    const run = (s, o = {}) => new d.TextRun({ text: s, font: F, size: o.sz || Z, bold: !!o.b, italics: !!o.i });
-    const pg = { size: { width: 11906, height: 16838 }, margin: { top: 1701, left: 1701, bottom: 1134, right: 1134 } };
 
-    const cov = covers(c);
-    const secs = [];
+    const A = d.AlignmentType;
+    const LR = d.LineRuleType ? d.LineRuleType.AUTO : 'auto';
 
-    cov.forEach((p, i) => {
-        secs.push({
-            properties: { page: pg },
-            children: p.map((it, j) => new d.Paragraph({
+    const run = (text, options = {}) => new d.TextRun({
+        text: String(text ?? ''),
+        font: F,
+        size: options.sz || Z,
+        bold: !!options.b,
+        italics: !!options.i
+    });
+
+    const page = {
+        size: { width: 11906, height: 16838 },
+        margin: { top: 1701, left: 1701, bottom: 1134, right: 1134 }
+    };
+
+    const sections = [];
+    const coverPages = covers(c);
+
+    // Cada capa/folha de rosto ocupa uma seção própria.
+    // Os parágrafos dentro da mesma página não recebem quebra individual.
+    coverPages.forEach((cover) => {
+        const children = cover.map((item) => {
+            const before = Math.max(0, Math.round(item.sb * LINE));
+            return new d.Paragraph({
                 alignment: A.CENTER,
-                pageBreakBefore: i > 0 || j > 0,
-                spacing: { before: Math.round(it.sb * LT), line: 360, lineRule: AU },
-                children: [run(it.s, { b: it.b })]
-            }))
+                keepLines: true,
+                spacing: {
+                    before,
+                    after: 0,
+                    line: LINE,
+                    lineRule: LR
+                },
+                children: [run(item.s, { b: item.b })]
+            });
+        });
+
+        sections.push({
+            properties: { page },
+            children
         });
     });
 
-    let pa = 0;
-    const gap = (bf, af) => { const v = Math.max(0, bf - pa); pa = af; return v; };
+    const children = bl.map((block) => {
+        if (block.t === 'sum_title') {
+            return new d.Paragraph({
+                alignment: A.CENTER,
+                pageBreakBefore: true,
+                keepNext: true,
+                keepLines: true,
+                spacing: {
+                    before: LINE,
+                    after: LINE,
+                    line: LINE,
+                    lineRule: LR
+                },
+                children: [run(block.s, { b: true })]
+            });
+        }
 
-    const kids = bl.map((b) => {
-        if (b.t === 'sum_title') return new d.Paragraph({ alignment: A.CENTER, pageBreakBefore: true, spacing: { before: gap(LT, LT), after: LT, line: 360, lineRule: AU }, children: [run(b.s, { b: true })] });
-        if (b.t === 'sum_item') return new d.Paragraph({ alignment: A.LEFT, spacing: { line: 360, lineRule: AU }, children: [run(b.s)] });
-        if (b.t === 'h') return new d.Paragraph({ alignment: b.un && b.lv === 1 ? A.CENTER : A.LEFT, pageBreakBefore: b.lv === 1, keepNext: true, keepLines: true, spacing: { before: gap(LT, LT), after: LT, line: 360, lineRule: AU }, children: [run(b.txt, { b: true, i: b.lv == 3 })] });
-        if (b.t === 'q') return new d.Paragraph({ alignment: A.JUSTIFIED, indent: { left: 2268 }, keepLines: true, spacing: { before: gap(LT, LT), after: LT, line: 240, lineRule: AU }, children: [run(b.s, { sz: Math.min(10, c.tam - 1) * 2 })] });
-        if (b.t === 'r') return new d.Paragraph({ alignment: A.LEFT, keepLines: true, spacing: { before: gap(0, ST), after: ST, line: 240, lineRule: AU }, children: [run(b.s)] });
-        if (b.t === 'li') return new d.Paragraph({ alignment: A.JUSTIFIED, indent: { left: 1134, hanging: 425 }, tabStops: [{ type: d.TabStopType.LEFT, position: 1134 }], keepLines: true, spacing: { before: gap(0, 0), after: 0, line: 360, lineRule: AU }, children: [run(b.mk), new d.TextRun({ children: [new d.Tab()], font: F, size: Z }), run(b.s)] });
-        return new d.Paragraph({ alignment: A.JUSTIFIED, indent: { firstLine: 709 }, spacing: { before: gap(0, 0), after: 0, line: 360, lineRule: AU }, children: [run(b.s)] });
+        if (block.t === 'sum_item') {
+            return new d.Paragraph({
+                alignment: A.LEFT,
+                keepLines: true,
+                spacing: {
+                    before: 0,
+                    after: 0,
+                    line: LINE,
+                    lineRule: LR
+                },
+                children: [run(block.s)]
+            });
+        }
+
+        if (block.t === 'h') {
+            return new d.Paragraph({
+                alignment: block.un && block.lv === 1 ? A.CENTER : A.LEFT,
+                keepNext: true,
+                keepLines: true,
+                spacing: {
+                    before: LINE,
+                    after: Math.round(LINE / 2),
+                    line: LINE,
+                    lineRule: LR
+                },
+                children: [run(block.txt, {
+                    b: true,
+                    i: block.lv === 3
+                })]
+            });
+        }
+
+        if (block.t === 'q') {
+            return new d.Paragraph({
+                alignment: A.JUSTIFIED,
+                indent: { left: 2268 },
+                keepLines: true,
+                spacing: {
+                    before: LINE,
+                    after: LINE,
+                    line: Math.round(SMALL * 1.15),
+                    lineRule: LR
+                },
+                children: [run(block.s, { sz: SMALL })]
+            });
+        }
+
+        if (block.t === 'r') {
+            return new d.Paragraph({
+                alignment: A.LEFT,
+                keepLines: true,
+                spacing: {
+                    before: 0,
+                    after: Math.round(LINE / 2),
+                    line: LINE,
+                    lineRule: LR
+                },
+                children: [run(block.s)]
+            });
+        }
+
+        if (block.t === 'li') {
+            return new d.Paragraph({
+                alignment: A.JUSTIFIED,
+                indent: { left: 1134, hanging: 425 },
+                tabStops: [{
+                    type: d.TabStopType.LEFT,
+                    position: 1134
+                }],
+                keepLines: true,
+                spacing: {
+                    before: 0,
+                    after: 0,
+                    line: LINE,
+                    lineRule: LR
+                },
+                children: [
+                    run(block.mk),
+                    new d.TextRun({
+                        children: [new d.Tab()],
+                        font: F,
+                        size: Z
+                    }),
+                    run(block.s)
+                ]
+            });
+        }
+
+        return new d.Paragraph({
+            alignment: A.JUSTIFIED,
+            indent: { firstLine: 709 },
+            keepLines: true,
+            spacing: {
+                before: 0,
+                after: 0,
+                line: LINE,
+                lineRule: LR
+            },
+            children: [run(block.s)]
+        });
     });
 
-    secs.push({
-        properties: { page: { ...pg, pageNumbers: { start: cov.length + 1 } } },
-        headers: { default: new d.Header({ children: [new d.Paragraph({ alignment: A.RIGHT, children: [new d.TextRun({ children: [d.PageNumber.CURRENT], font: F, size: 20 })] })] }) },
-        children: kids
+    sections.push({
+        properties: {
+            page: {
+                ...page,
+                pageNumbers: { start: coverPages.length + 1 }
+            }
+        },
+        headers: {
+            default: new d.Header({
+                children: [
+                    new d.Paragraph({
+                        alignment: A.RIGHT,
+                        children: [
+                            new d.TextRun({
+                                children: [d.PageNumber.CURRENT],
+                                font: F,
+                                size: 20
+                            })
+                        ]
+                    })
+                ]
+            })
+        },
+        children
     });
 
-    return d.Packer.toBlob(new d.Document({ creator: c.aut || "", title: c.tit || 'Documento ABNT', styles: { default: { document: { run: { font: F, size: Z } } } }, sections: secs }));
+    const document = new d.Document({
+        creator: c.aut || '',
+        title: c.tit || 'Documento ABNT',
+        styles: {
+            default: {
+                document: {
+                    run: { font: F, size: Z }
+                }
+            }
+        },
+        sections
+    });
+
+    return d.Packer.toBlob(document);
 }
 
 const nome = () => (cfg().tit || 'texto-abnt').replace(/[^\p{L}\p{N}_-]/gu, "").trim().slice(0, 60) || 'texto-abnt';
