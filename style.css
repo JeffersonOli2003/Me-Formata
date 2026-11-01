@@ -231,6 +231,16 @@ button:disabled {
     cursor: default;
 }
 
+.rodape, h3{
+    text-align: left;
+    color: rgb(87, 86, 86);
+    text-decoration: none;
+    transition: 0.5s;
+}
+
+.rodape:hover{
+    color: #fafafa;
+}
 .file {
     display: flex;
     gap: 8px;
