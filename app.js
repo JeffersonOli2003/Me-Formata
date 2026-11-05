@@ -97,7 +97,7 @@ async function pages(f) {
   if (/pdf/i.test(f.type) || /\.pdf$/i.test(f.name)) {
     setWorker();
     const p = await pdfjsLib.getDocument({ data: await f.arrayBuffer() })
-        .promise,
+      .promise,
       r = [];
     for (let i = 1; i <= p.numPages; i++) {
       const pg = await p.getPage(i),
@@ -145,18 +145,18 @@ const svgBlob = (str) => new Blob([str], { type: "image/svg+xml" });
 async function pdfToSvgFiles(f, notify) {
   setWorker();
   const doc = await pdfjsLib.getDocument({ data: await f.arrayBuffer() })
-      .promise,
+    .promise,
     res = [];
   let fallbacks = 0;
   for (let i = 1; i <= doc.numPages; i++) {
     notify(
       'Convertendo "' +
-        f.name +
-        '" para SVG: página ' +
-        i +
-        " de " +
-        doc.numPages +
-        "...",
+      f.name +
+      '" para SVG: página ' +
+      i +
+      " de " +
+      doc.numPages +
+      "...",
     );
     await yieldUI();
     const pg = await doc.getPage(i),
@@ -1068,7 +1068,7 @@ async function buildPdf() {
   pdf.setProducer("Me-Formata");
   try {
     pdf.setLanguage("pt-BR");
-  } catch (e) {}
+  } catch (e) { }
   const bytes = await pdf.save();
   return {
     blob: new Blob([bytes], { type: "application/pdf" }),
@@ -1097,7 +1097,7 @@ async function measure() {
       r = await buildPdf();
     REP = r.rep;
     LAST = { key: k, blob: r.blob };
-  } catch (e) {}
+  } catch (e) { }
   verify();
 }
 
@@ -1109,7 +1109,7 @@ function refresh() {
   clearTimeout(tm);
   tm = setTimeout(measure, 450);
 }
-function verify() {}
+function verify() { }
 
 const st = async (v, m) => {
   const prog = E("prog"),
@@ -1685,9 +1685,9 @@ if (mailBtn)
     need() &&
     window.open(
       "mailto:?subject=" +
-        encodeURIComponent(cfg().tit || "Texto formatado em ABNT") +
-        "&body=" +
-        encodeURIComponent(plain()),
+      encodeURIComponent(cfg().tit || "Texto formatado em ABNT") +
+      "&body=" +
+      encodeURIComponent(plain()),
       "_blank",
     );
 
@@ -1732,14 +1732,21 @@ document.querySelectorAll("[data-tab]").forEach((a) => {
 });
 
 /* Módulo de QR Code */
+
+/* =====================================================
+   MÓDULO QR CODE - ME-FORMATA
+   Carregamento automático da biblioteca
+   Compatível com GitHub e outros links
+===================================================== */
+
 (function () {
-  const input = document.getElementById("qrLink");
-  const generateBtn = document.getElementById("qrGenerate");
-  const downloadBtn = document.getElementById("qrDownload");
-  const status = document.getElementById("qrStatus");
-  const result = document.getElementById("qrResult");
-  const canvasHost = document.getElementById("qrCanvas");
-  const valueLabel = document.getElementById("qrValue");
+  const input = document.getElementById('qrLink');
+  const generateBtn = document.getElementById('qrGenerate');
+  const downloadBtn = document.getElementById('qrDownload');
+  const status = document.getElementById('qrStatus');
+  const result = document.getElementById('qrResult');
+  const canvasHost = document.getElementById('qrCanvas');
+  const valueLabel = document.getElementById('qrValue');
 
   if (
     !input ||
@@ -1749,79 +1756,216 @@ document.querySelectorAll("[data-tab]").forEach((a) => {
     !result ||
     !canvasHost ||
     !valueLabel
-  )
+  ) {
+    console.warn('Elementos do QR Code não encontrados no HTML.');
     return;
+  }
 
-  let currentLink = "";
+  let currentLink = '';
+  let libraryPromise = null;
 
-  const setStatus = (message) => {
+  function setStatus(message) {
     status.textContent = message;
-  };
+  }
 
-  generateBtn.addEventListener("click", () => {
-    const raw = input.value.trim();
+  // Valida e corrige o link
+  function normalizeLink(value) {
+    let link = value.trim();
 
-    if (!raw) {
-      setStatus("Digite um link antes de gerar o QR Code.");
-      input.focus();
-      return;
+    if (!link) {
+      throw new Error('empty');
+    }
+
+    if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(link)) {
+      link = 'https://' + link;
     }
 
     let parsed;
 
     try {
-      parsed = new URL(raw);
-    } catch (e) {
-      setStatus("Link inválido.");
+      parsed = new URL(link);
+    } catch (error) {
+      throw new Error('invalid');
+    }
+
+    if (
+      parsed.protocol !== 'http:' &&
+      parsed.protocol !== 'https:'
+    ) {
+      throw new Error('protocol');
+    }
+
+    if (!parsed.hostname || !parsed.hostname.includes('.')) {
+      throw new Error('invalid');
+    }
+
+    return parsed.href;
+  }
+
+  // Carrega a biblioteca automaticamente
+  function loadQRCodeLibrary() {
+    if (typeof window.QRCode === 'function') {
+      return Promise.resolve(window.QRCode);
+    }
+
+    if (libraryPromise) {
+      return libraryPromise;
+    }
+
+    const sources = [
+      'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',
+      'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js'
+    ];
+
+    libraryPromise = new Promise((resolve, reject) => {
+      let index = 0;
+
+      function tryNextSource() {
+        if (typeof window.QRCode === 'function') {
+          resolve(window.QRCode);
+          return;
+        }
+
+        if (index >= sources.length) {
+          libraryPromise = null;
+          reject(new Error('Não foi possível carregar a biblioteca.'));
+          return;
+        }
+
+        const script = document.createElement('script');
+
+        script.src = sources[index];
+        script.async = true;
+
+        index++;
+
+        script.onload = function () {
+          if (typeof window.QRCode === 'function') {
+            resolve(window.QRCode);
+          } else {
+            script.remove();
+            tryNextSource();
+          }
+        };
+
+        script.onerror = function () {
+          script.remove();
+          tryNextSource();
+        };
+
+        document.head.appendChild(script);
+      }
+
+      tryNextSource();
+    });
+
+    return libraryPromise;
+  }
+
+  // GERAÇÃO DO QR CODE
+  generateBtn.addEventListener('click', async function () {
+    let link;
+
+    try {
+      link = normalizeLink(input.value);
+    } catch (error) {
+      if (error.message === 'empty') {
+        setStatus('Digite um link antes de gerar o QR Code.');
+      } else if (error.message === 'protocol') {
+        setStatus('Utilize um link HTTP ou HTTPS.');
+      } else {
+        setStatus('Endereço inválido. Confira o link e tente novamente.');
+      }
+
       input.focus();
       return;
     }
 
-    canvasHost.textContent = "";
+    setStatus('Carregando gerador de QR Code...');
+
+    generateBtn.disabled = true;
+    downloadBtn.disabled = true;
+
+    canvasHost.innerHTML = '';
+    result.hidden = true;
+    currentLink = '';
 
     try {
-      new window.QRCode(canvasHost, {
-        text: parsed.href,
+      const QRCodeLibrary = await loadQRCodeLibrary();
+
+      new QRCodeLibrary(canvasHost, {
+        text: link,
         width: 256,
         height: 256,
-        colorDark: "#000000",
-        colorLight: "#ffffff",
-        correctLevel: window.QRCode.CorrectLevel.H,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+        correctLevel: QRCodeLibrary.CorrectLevel
+          ? QRCodeLibrary.CorrectLevel.H
+          : undefined
       });
 
-      currentLink = parsed.href;
-      valueLabel.textContent = currentLink;
+      currentLink = link;
+
+      valueLabel.textContent = link;
       result.hidden = false;
       downloadBtn.disabled = false;
-      setStatus("QR Code gerado com sucesso!");
+
+      setStatus('QR Code gerado com sucesso!');
+
     } catch (error) {
-      downloadBtn.disabled = true;
-      setStatus("Erro ao gerar QR Code.");
+      console.error('Erro ao gerar QR Code:', error);
+
+      canvasHost.innerHTML = '';
+      currentLink = '';
+
+      setStatus(
+        'Não foi possível carregar o gerador. Verifique sua conexão com a internet e tente novamente.'
+      );
+
+    } finally {
+      generateBtn.disabled = false;
     }
   });
 
-  downloadBtn.addEventListener("click", () => {
-    if (!currentLink) return;
+  // DOWNLOAD DO QR CODE
+  downloadBtn.addEventListener('click', function () {
+    if (!currentLink) {
+      setStatus('Gere um QR Code primeiro.');
+      return;
+    }
 
-    const canvas = canvasHost.querySelector("canvas");
-    const image = canvasHost.querySelector("img");
+    try {
+      const canvas = canvasHost.querySelector('canvas');
+      const image = canvasHost.querySelector('img');
 
-    let dataUrl = canvas
-      ? canvas.toDataURL("image/png")
-      : image
-        ? image.src
-        : "";
+      let dataUrl = '';
 
-    if (!dataUrl) return;
+      if (canvas) {
+        dataUrl = canvas.toDataURL('image/png');
+      } else if (image) {
+        dataUrl = image.src;
+      }
 
-    const anchor = document.createElement("a");
-    anchor.href = dataUrl;
-    anchor.download = "qrcode-me-formata.png";
+      if (!dataUrl || !dataUrl.startsWith('data:image/')) {
+        setStatus('Não foi possível preparar a imagem para download.');
+        return;
+      }
 
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
+      const anchor = document.createElement('a');
 
-    setStatus("Download iniciado.");
+      anchor.href = dataUrl;
+      anchor.download = 'qrcode-me-formata.png';
+
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+
+      setStatus('Download do QR Code iniciado!');
+
+    } catch (error) {
+      console.error('Erro no download:', error);
+      setStatus('Erro ao baixar o QR Code.');
+    }
   });
+
 })();
