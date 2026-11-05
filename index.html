@@ -180,6 +180,8 @@
                 </svg>
             </div>
         </section>
+        </div>
+        </section>
 
         <section class="sec" id="como">
             <div class="in">
@@ -375,7 +377,6 @@
                 <p class="hint">Primeiro o sistema analisa e mostra o relatório. Nada é alterado até você aplicar as
                     correções.</p>
             </div>
-
             <div class="card">
                 <div><progress id="prog" max="100" value="0" hidden style="width:100%"></progress><span id="pm"
                         class="hint"></span></div>
@@ -447,31 +448,50 @@
         </section>
     </div>
 
-    <!--RODAPÉ É AQUI-->
+    <!-- RODAPÉ ORGANIZADO -->
     <footer class="ft">
-        <div class="in fi">
-            <a class="logo" href="#" data-tab="t0">
-                <b>Me-Formata</b>
-                <small>Documentos sem complicação</small>
-            </a>
+        <div class="ft-container">
+            <div class="ft-main">
+                <a class="logo" href="#" data-tab="t0" aria-label="Me-Formata - voltar ao início">
+                    <b>Me-Formata</b>
+                    <small>Documentos sem complicação</small>
+                </a>
+
                 <div class="fx">
-                    <strong>Seu tempo é valioso.</strong><br>
-                    Deixe a formatação e as conversões com a gente.
+                    <strong>Seu tempo é valioso.</strong>
+                    <p>Deixe a formatação e as conversões com a gente.</p>
                 </div>
-            <h2 class="aviso">⚠️ Atenção: revise seu documento antes de entregar!</h2>
+
+                <aside class="ft-warning" role="note">
+                    <span aria-hidden="true">⚠️</span>
+                    <div>
+                        <strong>Atenção: revise seu documento antes de entregar!</strong>
+                        <p>Confira o resultado e as exigências específicas da sua instituição.</p>
+                    </div>
+                </aside>
+            </div>
+
+            <hr class="ft-divider">
+
+            <div class="ft-bottom">
+                <div class="ft-contact">
+                    <h2>Me contate</h2>
+                    <div class="ft-links">
+                        <a href="https://www.linkedin.com/in/jefferson-oliveira-a97614431/" class="rodape"
+                            target="_blank" rel="noopener noreferrer">LinkedIn</a>
+                        <a href="https://github.com/JeffersonOli2003" class="rodape" target="_blank"
+                            rel="noopener noreferrer">GitHub</a>
+                        <a href="https://www.instagram.com/eagle_produtor/" class="rodape" target="_blank"
+                            rel="noopener noreferrer">Instagram</a>
+                    </div>
+                </div>
+
+                <div class="ft-copy">
+                    <p>© 2026 Me-Formata. Todos os direitos reservados.</p>
+                    <p>Seus arquivos são processados diretamente no navegador.</p>
+                </div>
+            </div>
         </div>
-        <hr>
-             <div>
-                <h3>Me contate:</h3>
-                <a href="https://www.linkedin.com/in/jefferson-oliveira-a97614431/" class="rodape">• Linkedin</a> <br>
-                <a href="https://github.com/JeffersonOli2003" class="rodape">• Github</a> <br>
-                <a href="https://www.instagram.com/eagle_produtor/" class="rodape">• Instagram</a> <br>
-            </div>
-
-            <div>
-                <a href=""></a>
-            </div>
-
     </footer>
 
     <div id="toast" role="status" aria-live="polite"></div>
