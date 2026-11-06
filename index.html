@@ -180,8 +180,6 @@
                 </svg>
             </div>
         </section>
-        </div>
-        </section>
 
         <section class="sec" id="como">
             <div class="in">
@@ -309,11 +307,19 @@
                     <input type="radio" name="to" id="toPdf" value="pdf"><label for="toPdf">PDF</label>
                     <input type="radio" name="to" id="toSvg" value="svg"><label for="toSvg">SVG</label>
                 </div>
+                <div id="svgOpts" hidden>
+                    <label class="l" for="svgMode">Modo do SVG</label>
+                    <select id="svgMode">
+                        <option value="fiel">Fiel ao original (nítido, cores e alinhamento preservados)</option>
+                        <option value="vetor">Vetorizar (só para logos e ilustrações simples)</option>
+                    </select>
+                </div>
                 <div class="row"><button class="pri" id="go" disabled>Converter</button></div>
                 <p class="hint" id="cvStatus" role="status" aria-live="polite" style="min-height:1.3em"></p>
-                <p class="hint">PDF → PNG/JPG/SVG gera um arquivo por página (no SVG, o conteúdo continua vetorial).
-                    PNG/JPG → SVG usa vetorização automática: o resultado é uma aproximação em curvas, ideal para logos
-                    e ilustrações. Várias imagens → PDF juntam tudo em um único PDF.</p>
+                <p class="hint">PDF/PNG/JPG → SVG no modo "Fiel" mantém a qualidade, a nitidez e as cores originais (a
+                    imagem vai dentro do SVG). O modo "Vetorizar" converte em curvas e só é indicado para logos e
+                    ilustrações simples. PDF → PNG/JPG gera um arquivo por página. Várias imagens → PDF juntam tudo em
+                    um único PDF.</p>
             </div>
             <div class="card" id="res" hidden>
                 <strong>Prontos para enviar</strong>

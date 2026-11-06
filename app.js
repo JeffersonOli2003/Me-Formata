@@ -97,7 +97,7 @@ async function pages(f) {
   if (/pdf/i.test(f.type) || /\.pdf$/i.test(f.name)) {
     setWorker();
     const p = await pdfjsLib.getDocument({ data: await f.arrayBuffer() })
-      .promise,
+        .promise,
       r = [];
     for (let i = 1; i <= p.numPages; i++) {
       const pg = await p.getPage(i),
@@ -133,6 +133,18 @@ const isPdfF = (f) => /pdf/i.test(f.type) || /\.pdf$/i.test(f.name);
 const isSvgF = (f) => /svg/i.test(f.type) || /\.svg$/i.test(f.name);
 const yieldUI = () => new Promise((r) => setTimeout(r, 30));
 
+// Mostra/esconde as opções de SVG
+function toggleSvgOpts() {
+  const box = $("#svgOpts"),
+    sel = document.querySelector("input[name=to]:checked");
+  if (box && sel) box.hidden = sel.value !== "svg";
+}
+document
+  .querySelectorAll("input[name=to]")
+  .forEach((r) => r.addEventListener("change", toggleSvgOpts));
+toggleSvgOpts();
+const svgMode = () => ($("#svgMode") ? $("#svgMode").value : "fiel");
+
 function validSvg(str) {
   const d = new DOMParser().parseFromString(str, "image/svg+xml");
   if (d.querySelector("parsererror") || d.documentElement.nodeName !== "svg")
@@ -145,18 +157,18 @@ const svgBlob = (str) => new Blob([str], { type: "image/svg+xml" });
 async function pdfToSvgFiles(f, notify) {
   setWorker();
   const doc = await pdfjsLib.getDocument({ data: await f.arrayBuffer() })
-    .promise,
+      .promise,
     res = [];
   let fallbacks = 0;
   for (let i = 1; i <= doc.numPages; i++) {
     notify(
       'Convertendo "' +
-      f.name +
-      '" para SVG: página ' +
-      i +
-      " de " +
-      doc.numPages +
-      "...",
+        f.name +
+        '" para SVG: página ' +
+        i +
+        " de " +
+        doc.numPages +
+        "...",
     );
     await yieldUI();
     const pg = await doc.getPage(i),
@@ -215,7 +227,101 @@ async function pdfToSvgFiles(f, notify) {
   return { files: res, fallbacks };
 }
 
-// PNG/JPG -> SVG (vetorização com ImageTracer)
+// PNG/JPG -> SVG FIEL: embute o arquivo original, sem redimensionar nem recomprimir
+async function imageToSvgFiel(f, notify) {
+  notify('Preparando "' + f.name + '" em SVG...');
+  await yieldUI();
+  const dataUrl = await rd(f);
+  const im = await img(dataUrl);
+  const w = im.naturalWidth,
+    h = im.naturalHeight;
+  const svg =
+    '<?xml version="1.0" encoding="UTF-8"?>\n' +
+    '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" ' +
+    'width="' +
+    w +
+    '" height="' +
+    h +
+    '" viewBox="0 0 ' +
+    w +
+    " " +
+    h +
+    '">' +
+    '<image x="0" y="0" width="' +
+    w +
+    '" height="' +
+    h +
+    '" ' +
+    'preserveAspectRatio="xMidYMid meet" image-rendering="optimizeQuality" ' +
+    'href="' +
+    dataUrl +
+    '" xlink:href="' +
+    dataUrl +
+    '"/></svg>';
+  validSvg(svg);
+  return { name: base(f.name) + ".svg", blob: svgBlob(svg) };
+}
+
+// PDF -> SVG FIEL: renderiza cada página em alta resolução (PNG sem perdas) dentro do SVG
+async function pdfToSvgFiel(f, notify) {
+  setWorker();
+  const doc = await pdfjsLib.getDocument({ data: await f.arrayBuffer() })
+      .promise,
+    res = [];
+  const MAX_PIXELS = 16000000; // limite seguro de canvas (celulares incluídos)
+  for (let i = 1; i <= doc.numPages; i++) {
+    notify(
+      'Convertendo "' +
+        f.name +
+        '" para SVG: página ' +
+        i +
+        " de " +
+        doc.numPages +
+        "...",
+    );
+    await yieldUI();
+    const pg = await doc.getPage(i),
+      vp = pg.getViewport({ scale: 1 });
+    const k = Math.min(4, Math.sqrt(MAX_PIXELS / (vp.width * vp.height)));
+    const v2 = pg.getViewport({ scale: k }),
+      c = cv(Math.round(v2.width), Math.round(v2.height), true);
+    await pg.render({ canvasContext: c.getContext("2d"), viewport: v2 })
+      .promise;
+    const png = c.toDataURL("image/png");
+    const svg =
+      '<?xml version="1.0" encoding="UTF-8"?>\n' +
+      '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" ' +
+      'width="' +
+      vp.width +
+      '" height="' +
+      vp.height +
+      '" viewBox="0 0 ' +
+      vp.width +
+      " " +
+      vp.height +
+      '">' +
+      '<image x="0" y="0" width="' +
+      vp.width +
+      '" height="' +
+      vp.height +
+      '" ' +
+      'preserveAspectRatio="xMidYMid meet" image-rendering="optimizeQuality" ' +
+      'href="' +
+      png +
+      '" xlink:href="' +
+      png +
+      '"/></svg>';
+    validSvg(svg);
+    res.push({
+      name: base(f.name) + (doc.numPages > 1 ? "-p" + i : "") + ".svg",
+      blob: svgBlob(svg),
+    });
+    c.width = c.height = 0; // libera memória
+  }
+  return { files: res, fallbacks: 0 };
+}
+
+// PNG/JPG -> SVG (vetorização com ImageTracer) - modo "Vetorizar"
 async function imageToSvgFile(f, notify) {
   if (!window.ImageTracer) throw new Error("tracer");
   notify('Vetorizando "' + f.name + '"... isso pode levar alguns segundos.');
@@ -223,7 +329,7 @@ async function imageToSvgFile(f, notify) {
   const im = await img(await rd(f));
   const w = im.naturalWidth,
     h = im.naturalHeight;
-  const k = Math.min(1, 1400 / Math.max(w, h));
+  const k = Math.min(1, 2000 / Math.max(w, h));
   const tw = Math.max(1, Math.round(w * k)),
     th = Math.max(1, Math.round(h * k));
   const isJpg = /jpe?g/i.test(f.type) || /\.jpe?g$/i.test(f.name);
@@ -232,15 +338,15 @@ async function imageToSvgFile(f, notify) {
   const data = c.getContext("2d").getImageData(0, 0, tw, th);
   await yieldUI();
   let svg = window.ImageTracer.imagedataToSVG(data, {
-    numberofcolors: 32,
+    numberofcolors: 64,
     colorsampling: 2,
-    colorquantcycles: 3,
-    ltres: 1,
-    qtres: 1,
-    pathomit: 8,
+    colorquantcycles: 5,
+    ltres: 0.5,
+    qtres: 0.5,
+    pathomit: 2,
     blurradius: 0,
     strokewidth: 0,
-    roundcoords: 1,
+    roundcoords: 2,
     scale: 1,
     viewbox: true,
     desc: false,
@@ -256,6 +362,7 @@ async function imageToSvgFile(f, notify) {
 }
 
 async function convertToSvg() {
+  const modo = svgMode();
   let skipped = 0,
     fallbacks = 0;
   for (const f of f1.files) {
@@ -264,11 +371,18 @@ async function convertToSvg() {
       continue;
     }
     if (isPdfF(f)) {
-      const r = await pdfToSvgFiles(f, cvMsg);
+      const r =
+        modo === "fiel"
+          ? await pdfToSvgFiel(f, cvMsg)
+          : await pdfToSvgFiles(f, cvMsg);
       out.push(...r.files);
       fallbacks += r.fallbacks;
     } else {
-      out.push(await imageToSvgFile(f, cvMsg));
+      out.push(
+        modo === "fiel"
+          ? await imageToSvgFiel(f, cvMsg)
+          : await imageToSvgFile(f, cvMsg),
+      );
     }
   }
   if (skipped)
@@ -1068,7 +1182,7 @@ async function buildPdf() {
   pdf.setProducer("Me-Formata");
   try {
     pdf.setLanguage("pt-BR");
-  } catch (e) { }
+  } catch (e) {}
   const bytes = await pdf.save();
   return {
     blob: new Blob([bytes], { type: "application/pdf" }),
@@ -1097,7 +1211,7 @@ async function measure() {
       r = await buildPdf();
     REP = r.rep;
     LAST = { key: k, blob: r.blob };
-  } catch (e) { }
+  } catch (e) {}
   verify();
 }
 
@@ -1109,7 +1223,7 @@ function refresh() {
   clearTimeout(tm);
   tm = setTimeout(measure, 450);
 }
-function verify() { }
+function verify() {}
 
 const st = async (v, m) => {
   const prog = E("prog"),
@@ -1685,9 +1799,9 @@ if (mailBtn)
     need() &&
     window.open(
       "mailto:?subject=" +
-      encodeURIComponent(cfg().tit || "Texto formatado em ABNT") +
-      "&body=" +
-      encodeURIComponent(plain()),
+        encodeURIComponent(cfg().tit || "Texto formatado em ABNT") +
+        "&body=" +
+        encodeURIComponent(plain()),
       "_blank",
     );
 
@@ -1724,14 +1838,15 @@ document.querySelectorAll("[data-tab]").forEach((a) => {
       t.checked = true;
       t.dispatchEvent(new Event("change"));
     }
-    if (d.to && E(d.to)) E(d.to).checked = true;
+    if (d.to && E(d.to)) {
+      E(d.to).checked = true;
+      E(d.to).dispatchEvent(new Event("change"));
+    }
     d.go
       ? E(d.go).scrollIntoView({ behavior: "smooth" })
       : window.scrollTo(0, 0);
   });
 });
-
-/* Módulo de QR Code */
 
 /* =====================================================
    MÓDULO QR CODE - ME-FORMATA
@@ -1740,13 +1855,13 @@ document.querySelectorAll("[data-tab]").forEach((a) => {
 ===================================================== */
 
 (function () {
-  const input = document.getElementById('qrLink');
-  const generateBtn = document.getElementById('qrGenerate');
-  const downloadBtn = document.getElementById('qrDownload');
-  const status = document.getElementById('qrStatus');
-  const result = document.getElementById('qrResult');
-  const canvasHost = document.getElementById('qrCanvas');
-  const valueLabel = document.getElementById('qrValue');
+  const input = document.getElementById("qrLink");
+  const generateBtn = document.getElementById("qrGenerate");
+  const downloadBtn = document.getElementById("qrDownload");
+  const status = document.getElementById("qrStatus");
+  const result = document.getElementById("qrResult");
+  const canvasHost = document.getElementById("qrCanvas");
+  const valueLabel = document.getElementById("qrValue");
 
   if (
     !input ||
@@ -1757,11 +1872,11 @@ document.querySelectorAll("[data-tab]").forEach((a) => {
     !canvasHost ||
     !valueLabel
   ) {
-    console.warn('Elementos do QR Code não encontrados no HTML.');
+    console.warn("Elementos do QR Code não encontrados no HTML.");
     return;
   }
 
-  let currentLink = '';
+  let currentLink = "";
   let libraryPromise = null;
 
   function setStatus(message) {
@@ -1773,11 +1888,11 @@ document.querySelectorAll("[data-tab]").forEach((a) => {
     let link = value.trim();
 
     if (!link) {
-      throw new Error('empty');
+      throw new Error("empty");
     }
 
     if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(link)) {
-      link = 'https://' + link;
+      link = "https://" + link;
     }
 
     let parsed;
@@ -1785,18 +1900,15 @@ document.querySelectorAll("[data-tab]").forEach((a) => {
     try {
       parsed = new URL(link);
     } catch (error) {
-      throw new Error('invalid');
+      throw new Error("invalid");
     }
 
-    if (
-      parsed.protocol !== 'http:' &&
-      parsed.protocol !== 'https:'
-    ) {
-      throw new Error('protocol');
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      throw new Error("protocol");
     }
 
-    if (!parsed.hostname || !parsed.hostname.includes('.')) {
-      throw new Error('invalid');
+    if (!parsed.hostname || !parsed.hostname.includes(".")) {
+      throw new Error("invalid");
     }
 
     return parsed.href;
@@ -1804,7 +1916,7 @@ document.querySelectorAll("[data-tab]").forEach((a) => {
 
   // Carrega a biblioteca automaticamente
   function loadQRCodeLibrary() {
-    if (typeof window.QRCode === 'function') {
+    if (typeof window.QRCode === "function") {
       return Promise.resolve(window.QRCode);
     }
 
@@ -1813,26 +1925,26 @@ document.querySelectorAll("[data-tab]").forEach((a) => {
     }
 
     const sources = [
-      'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',
-      'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js'
+      "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js",
+      "https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js",
     ];
 
     libraryPromise = new Promise((resolve, reject) => {
       let index = 0;
 
       function tryNextSource() {
-        if (typeof window.QRCode === 'function') {
+        if (typeof window.QRCode === "function") {
           resolve(window.QRCode);
           return;
         }
 
         if (index >= sources.length) {
           libraryPromise = null;
-          reject(new Error('Não foi possível carregar a biblioteca.'));
+          reject(new Error("Não foi possível carregar a biblioteca."));
           return;
         }
 
-        const script = document.createElement('script');
+        const script = document.createElement("script");
 
         script.src = sources[index];
         script.async = true;
@@ -1840,7 +1952,7 @@ document.querySelectorAll("[data-tab]").forEach((a) => {
         index++;
 
         script.onload = function () {
-          if (typeof window.QRCode === 'function') {
+          if (typeof window.QRCode === "function") {
             resolve(window.QRCode);
           } else {
             script.remove();
@@ -1863,32 +1975,32 @@ document.querySelectorAll("[data-tab]").forEach((a) => {
   }
 
   // GERAÇÃO DO QR CODE
-  generateBtn.addEventListener('click', async function () {
+  generateBtn.addEventListener("click", async function () {
     let link;
 
     try {
       link = normalizeLink(input.value);
     } catch (error) {
-      if (error.message === 'empty') {
-        setStatus('Digite um link antes de gerar o QR Code.');
-      } else if (error.message === 'protocol') {
-        setStatus('Utilize um link HTTP ou HTTPS.');
+      if (error.message === "empty") {
+        setStatus("Digite um link antes de gerar o QR Code.");
+      } else if (error.message === "protocol") {
+        setStatus("Utilize um link HTTP ou HTTPS.");
       } else {
-        setStatus('Endereço inválido. Confira o link e tente novamente.');
+        setStatus("Endereço inválido. Confira o link e tente novamente.");
       }
 
       input.focus();
       return;
     }
 
-    setStatus('Carregando gerador de QR Code...');
+    setStatus("Carregando gerador de QR Code...");
 
     generateBtn.disabled = true;
     downloadBtn.disabled = true;
 
-    canvasHost.innerHTML = '';
+    canvasHost.innerHTML = "";
     result.hidden = true;
-    currentLink = '';
+    currentLink = "";
 
     try {
       const QRCodeLibrary = await loadQRCodeLibrary();
@@ -1897,11 +2009,11 @@ document.querySelectorAll("[data-tab]").forEach((a) => {
         text: link,
         width: 256,
         height: 256,
-        colorDark: '#000000',
-        colorLight: '#ffffff',
+        colorDark: "#000000",
+        colorLight: "#ffffff",
         correctLevel: QRCodeLibrary.CorrectLevel
           ? QRCodeLibrary.CorrectLevel.H
-          : undefined
+          : undefined,
       });
 
       currentLink = link;
@@ -1910,62 +2022,58 @@ document.querySelectorAll("[data-tab]").forEach((a) => {
       result.hidden = false;
       downloadBtn.disabled = false;
 
-      setStatus('QR Code gerado com sucesso!');
-
+      setStatus("QR Code gerado com sucesso!");
     } catch (error) {
-      console.error('Erro ao gerar QR Code:', error);
+      console.error("Erro ao gerar QR Code:", error);
 
-      canvasHost.innerHTML = '';
-      currentLink = '';
+      canvasHost.innerHTML = "";
+      currentLink = "";
 
       setStatus(
-        'Não foi possível carregar o gerador. Verifique sua conexão com a internet e tente novamente.'
+        "Não foi possível carregar o gerador. Verifique sua conexão com a internet e tente novamente.",
       );
-
     } finally {
       generateBtn.disabled = false;
     }
   });
 
   // DOWNLOAD DO QR CODE
-  downloadBtn.addEventListener('click', function () {
+  downloadBtn.addEventListener("click", function () {
     if (!currentLink) {
-      setStatus('Gere um QR Code primeiro.');
+      setStatus("Gere um QR Code primeiro.");
       return;
     }
 
     try {
-      const canvas = canvasHost.querySelector('canvas');
-      const image = canvasHost.querySelector('img');
+      const canvas = canvasHost.querySelector("canvas");
+      const image = canvasHost.querySelector("img");
 
-      let dataUrl = '';
+      let dataUrl = "";
 
       if (canvas) {
-        dataUrl = canvas.toDataURL('image/png');
+        dataUrl = canvas.toDataURL("image/png");
       } else if (image) {
         dataUrl = image.src;
       }
 
-      if (!dataUrl || !dataUrl.startsWith('data:image/')) {
-        setStatus('Não foi possível preparar a imagem para download.');
+      if (!dataUrl || !dataUrl.startsWith("data:image/")) {
+        setStatus("Não foi possível preparar a imagem para download.");
         return;
       }
 
-      const anchor = document.createElement('a');
+      const anchor = document.createElement("a");
 
       anchor.href = dataUrl;
-      anchor.download = 'qrcode-me-formata.png';
+      anchor.download = "qrcode-me-formata.png";
 
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
 
-      setStatus('Download do QR Code iniciado!');
-
+      setStatus("Download do QR Code iniciado!");
     } catch (error) {
-      console.error('Erro no download:', error);
-      setStatus('Erro ao baixar o QR Code.');
+      console.error("Erro no download:", error);
+      setStatus("Erro ao baixar o QR Code.");
     }
   });
-
 })();
