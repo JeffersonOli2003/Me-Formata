@@ -2107,7 +2107,8 @@ document.querySelectorAll("[data-tab]").forEach((a) => {
   function stats() {
     const t = txt.value.replace(/\r/g, "");
     return {
-      comEsp: glyphs(t),
+      // Google Docs e Word não contam as quebras de linha (Enter) como caractere
+      comEsp: glyphs(t.replace(/\n/g, "")),
       semEsp: glyphs(t.replace(/\s/g, "")),
       palavras: t
         .trim()
