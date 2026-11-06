@@ -2077,3 +2077,104 @@ document.querySelectorAll("[data-tab]").forEach((a) => {
     }
   });
 })();
+
+/* =====================================================
+   MÓDULO CONTADOR - ME-FORMATA
+   Conta caractere por caractere ou palavra por palavra
+===================================================== */
+(function () {
+  const txt = document.getElementById("ctTxt");
+  if (!txt) return;
+
+  const numEl = document.getElementById("ctNum"),
+    lblEl = document.getElementById("ctLbl"),
+    spBox = document.getElementById("ctSpBox"),
+    spChk = document.getElementById("ctSpaces"),
+    clearBtn = document.getElementById("ctClear"),
+    copyBtn = document.getElementById("ctCopy");
+
+  const seg =
+    typeof Intl !== "undefined" && Intl.Segmenter
+      ? new Intl.Segmenter(undefined, { granularity: "grapheme" })
+      : null;
+  // Conta "caracteres visíveis" (emojis e acentos combinados contam como 1)
+  const glyphs = (s) =>
+    seg ? [...seg.segment(s)].length : Array.from(s).length;
+  const fmt = (n) => n.toLocaleString("pt-BR");
+  const plural = (n, um, varios) => (n === 1 ? um : varios);
+  const mode = () => document.querySelector("input[name=ctMode]:checked").value;
+
+  function stats() {
+    const t = txt.value.replace(/\r/g, "");
+    return {
+      comEsp: glyphs(t),
+      semEsp: glyphs(t.replace(/\s/g, "")),
+      palavras: t
+        .trim()
+        .split(/\s+/)
+        .filter((w) => /[\p{L}\p{N}]/u.test(w)).length,
+      paragrafos: t.split(/\n\s*\n/).filter((p) => p.trim()).length,
+      linhas: t ? t.split("\n").length : 0,
+    };
+  }
+
+  function setExtra(i, n, label) {
+    document.getElementById("ctE" + i).textContent = fmt(n);
+    document.getElementById("ctL" + i).textContent = label;
+  }
+
+  function update() {
+    const s = stats(),
+      m = mode();
+    let n, label;
+    spBox.hidden = m !== "chars";
+    if (m === "words") {
+      n = s.palavras;
+      label = plural(n, "palavra", "palavras");
+      setExtra(1, s.comEsp, "Caracteres (com espaços)");
+      setExtra(2, s.semEsp, "Caracteres (sem espaços)");
+      setExtra(3, s.paragrafos, "Parágrafos");
+    } else {
+      const com = spChk.checked;
+      n = com ? s.comEsp : s.semEsp;
+      label =
+        plural(n, "caractere", "caracteres") +
+        (com ? " (com espaços)" : " (sem espaços)");
+      setExtra(1, s.palavras, "Palavras");
+      setExtra(2, s.paragrafos, "Parágrafos");
+      setExtra(3, s.linhas, "Linhas");
+    }
+    numEl.textContent = fmt(n);
+    lblEl.textContent = label;
+    update.last = fmt(n) + " " + label;
+  }
+
+  txt.addEventListener("input", update);
+  spChk.addEventListener("change", update);
+  document
+    .querySelectorAll("input[name=ctMode]")
+    .forEach((r) => r.addEventListener("change", update));
+
+  clearBtn.addEventListener("click", () => {
+    txt.value = "";
+    update();
+    txt.focus();
+  });
+
+  copyBtn.addEventListener("click", async () => {
+    const msg = update.last || "";
+    try {
+      await navigator.clipboard.writeText(msg);
+    } catch (e) {
+      const a = document.createElement("textarea");
+      a.value = msg;
+      document.body.append(a);
+      a.select();
+      document.execCommand("copy");
+      a.remove();
+    }
+    toast("Resultado copiado: " + msg);
+  });
+
+  update();
+})();

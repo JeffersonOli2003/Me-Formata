@@ -46,6 +46,7 @@
     <input class="tab" type="radio" name="tab" id="t1" aria-label="Conversor">
     <input class="tab" type="radio" name="tab" id="t2" aria-label="ABNT">
     <input class="tab" type="radio" name="tab" id="t3" aria-label="QR Code">
+    <input class="tab" type="radio" name="tab" id="t4" aria-label="Contador">
 
     <svg width="0" height="0" style="position:absolute" aria-hidden="true">
         <defs>
@@ -228,10 +229,12 @@
                                 arquivo.</small></span><span class="go"><svg class="i" aria-hidden="true">
                                 <use href="#arr" />
                             </svg></span></a>
-                    <div class="tl soon" aria-disabled="true"><span class="ic"><svg class="i" aria-hidden="true">
+                    <a class="tl" href="#" data-tab="t4"><span class="ic"><svg class="i" aria-hidden="true">
                                 <use href="#type" />
-                            </svg></span><span><b>Contador de palavras</b><small>Saiba quantas palavras tem seu
-                                texto.</small></span><em>Em breve</em></div>
+                            </svg></span><span><b>Contador de palavras</b><small>Conte caracteres ou palavras do seu
+                                texto.</small></span><span class="go"><svg class="i" aria-hidden="true">
+                                <use href="#arr" />
+                            </svg></span></a>
                     <div class="tl soon" aria-disabled="true"><span class="ic"><svg class="i" aria-hidden="true">
                                 <use href="#book" />
                             </svg></span><span><b>Gerador de referências</b><small>Monte suas referências no padrão
@@ -290,6 +293,12 @@
         <div class="ph" id="ph3">
             <h2 class="ft-t">Gerador de QR Code</h2>
             <p class="sub">Gere um QR Code a partir de qualquer link e baixe nos formatos PNG, JPG, PDF ou SVG.</p>
+        </div>
+
+        <div class="ph" id="ph4">
+            <h2 class="ft-t">Contador de caracteres e palavras</h2>
+            <p class="sub">Escolha como contar: caractere por caractere ou palavra por palavra. Nada é enviado a
+                servidores.</p>
         </div>
 
         <!-- PÁGINA 1: CONVERSOR -->
@@ -449,6 +458,38 @@
                 <div id="qrResult" class="qr-result" hidden>
                     <div id="qrCanvas" class="qr-canvas" aria-label="QR Code gerado"></div>
                     <p class="qr-value" id="qrValue"></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- PÁGINA 4: CONTADOR -->
+        <section class="page" id="p4">
+            <div class="card">
+                <label class="l" for="ctTxt">Digite ou cole seu texto</label>
+                <textarea id="ctTxt"
+                    placeholder="Cole ou digite aqui. A contagem é atualizada em tempo real."></textarea>
+
+                <label class="l">Contar por</label>
+                <div class="pills">
+                    <input type="radio" name="ctMode" id="ctChars" value="chars" checked><label for="ctChars">Caractere
+                        por caractere</label>
+                    <input type="radio" name="ctMode" id="ctWords" value="words"><label for="ctWords">Palavra por
+                        palavra</label>
+                </div>
+                <label class="ck" id="ctSpBox"><input type="checkbox" id="ctSpaces" checked> Contar os espaços</label>
+
+                <div class="ct-main" role="status" aria-live="polite">
+                    <div class="ct-num" id="ctNum">0</div>
+                    <div class="ct-lbl" id="ctLbl">caracteres (com espaços)</div>
+                </div>
+                <div class="ct-extra">
+                    <div><b id="ctE1">0</b><small id="ctL1">Palavras</small></div>
+                    <div><b id="ctE2">0</b><small id="ctL2">Parágrafos</small></div>
+                    <div><b id="ctE3">0</b><small id="ctL3">Linhas</small></div>
+                </div>
+                <div class="row">
+                    <button class="pri" id="ctCopy" type="button">Copiar resultado</button>
+                    <button id="ctClear" type="button">Limpar</button>
                 </div>
             </div>
         </section>
