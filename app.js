@@ -2179,3 +2179,160 @@ document.querySelectorAll("[data-tab]").forEach((a) => {
 
   update();
 })();
+
+/* =====================================================
+   MÓDULO LINK DO PDF - ME-FORMATA
+   Envia um PDF ao Supabase Storage e devolve um link público.
+===================================================== */
+
+const LINK_CONFIG = {
+  url: "", // Ex.: "https://abcdefgh.supabase.co"
+  chave: "", // chave pública do projeto (anon ou publishable)
+  bucket: "pdfs",
+  limiteMB: 20, // use o mesmo limite configurado no bucket
+};
+
+function linkConfigurado() {
+  return !!(LINK_CONFIG.url && LINK_CONFIG.chave);
+}
+
+function nomeSeguroLink(n) {
+  return (
+    String(n || "")
+      .replace(/\.pdf$/i, "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^A-Za-z0-9_-]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 60) || "documento"
+  );
+}
+
+function idAleatorioLink() {
+  if (window.crypto && crypto.randomUUID)
+    return crypto.randomUUID().replace(/-/g, "");
+  const b = new Uint8Array(16);
+  crypto.getRandomValues(b);
+  return Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
+}
+
+async function enviarPdfParaLink(blob, nomeArquivo) {
+  if (!linkConfigurado()) throw new Error("linkconfig");
+  if (blob.size > LINK_CONFIG.limiteMB * 1048576) throw new Error("linkgrande");
+
+  const base = LINK_CONFIG.url.replace(/\/+$/, "");
+  const caminho =
+    idAleatorioLink() + "/" + nomeSeguroLink(nomeArquivo) + ".pdf";
+  const headers = {
+    apikey: LINK_CONFIG.chave,
+    "Content-Type": "application/pdf",
+    "x-upsert": "false",
+    "cache-control": "max-age=3600",
+  };
+  if (/^eyJ/.test(LINK_CONFIG.chave))
+    headers.Authorization = "Bearer " + LINK_CONFIG.chave;
+
+  const r = await fetch(
+    base + "/storage/v1/object/" + LINK_CONFIG.bucket + "/" + caminho,
+    { method: "POST", headers, body: blob },
+  );
+  if (!r.ok) {
+    console.error(
+      "Falha no envio do PDF:",
+      r.status,
+      await r.text().catch(() => ""),
+    );
+    throw new Error(r.status === 413 ? "linkgrande" : "linkupload");
+  }
+  return (
+    base + "/storage/v1/object/public/" + LINK_CONFIG.bucket + "/" + caminho
+  );
+}
+
+async function copiarTextoLink(t) {
+  try {
+    await navigator.clipboard.writeText(t);
+  } catch (e) {
+    const a = document.createElement("textarea");
+    a.value = t;
+    document.body.append(a);
+    a.select();
+    document.execCommand("copy");
+    a.remove();
+  }
+}
+
+function mostrarLinkBox(host, url) {
+  const antigo = host.querySelector(".lnk-box");
+  if (antigo) antigo.remove();
+
+  const box = document.createElement("div");
+  box.className = "lnk-box";
+
+  const campo = document.createElement("input");
+  campo.className = "t";
+  campo.readOnly = true;
+  campo.value = url;
+  campo.setAttribute("aria-label", "Link do PDF");
+  campo.addEventListener("focus", () => campo.select());
+
+  const copiar = document.createElement("button");
+  copiar.type = "button";
+  copiar.className = "pri";
+  copiar.textContent = "Copiar link";
+  copiar.onclick = async () => {
+    await copiarTextoLink(url);
+    toast("Link copiado!");
+  };
+
+  box.append(campo, copiar);
+  host.append(box);
+}
+
+const MSG_LINK = {
+  linkconfig: "O envio de links ainda não foi configurado neste site.",
+  linkgrande:
+    "Este PDF passa do limite de " +
+    LINK_CONFIG.limiteMB +
+    " MB e não pode virar link.",
+  linkupload:
+    "Não foi possível enviar o PDF. Confira a conexão e tente novamente.",
+};
+
+async function gerarLinkPdf(btn, nomeArquivo, obterBlob, host) {
+  if (!linkConfigurado()) return toast(MSG_LINK.linkconfig);
+  const rotulo = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Enviando...";
+  try {
+    const blob = await obterBlob();
+    const url = await enviarPdfParaLink(blob, nomeArquivo);
+    mostrarLinkBox(host, url);
+    toast("Link gerado! Copie e compartilhe.");
+  } catch (e) {
+    console.error(e);
+    toast(MSG_LINK[e.message] || MSG_LINK.linkupload);
+  }
+  btn.disabled = false;
+  btn.textContent = rotulo;
+}
+
+/* Botão da página ABNT */
+const lnkBtn = E("lnk");
+if (lnkBtn)
+  lnkBtn.onclick = () =>
+    need() && gerarLinkPdf(lnkBtn, nome() + ".pdf", getPdf, E("lnkBox"));
+
+/* Botão "Gerar link" nos PDFs do conversor */
+const showConvOriginal = showConv;
+showConv = function () {
+  showConvOriginal();
+  document.querySelectorAll("#list .file").forEach((d, i) => {
+    const o = out[i];
+    if (!o || o.blob.type !== "application/pdf") return;
+    const bl = document.createElement("button");
+    bl.textContent = "Gerar link";
+    bl.onclick = () => gerarLinkPdf(bl, o.name, async () => o.blob, d);
+    d.append(bl);
+  });
+};
